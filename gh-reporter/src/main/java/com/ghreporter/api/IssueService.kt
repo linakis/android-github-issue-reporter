@@ -7,6 +7,7 @@ import com.ghreporter.GHReporter
 import com.ghreporter.api.models.CreateIssueRequest
 import com.ghreporter.api.models.IssueResponse
 import com.ghreporter.auth.SecureTokenStorage
+import com.ghreporter.utils.ImageUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -76,12 +77,21 @@ class IssueService(
         try {
             var gistUrl: String? = null
 
-            // Create Gist for logs if any log option is enabled
-            if (options.includeTimberLogs || options.includeOkHttpLogs || options.includeLogcat) {
+            // Process screenshot if included
+            var screenshotBase64: String? = null
+            if (options.screenshotUris.isNotEmpty()) {
+                val maxWidth = GHReporter.getConfig().screenshotMaxWidth
+                val processedImage = ImageUtils.processImage(context, options.screenshotUris.first(), maxWidth)
+                screenshotBase64 = processedImage?.base64
+            }
+
+            // Create Gist for logs if any log option is enabled OR screenshot is present
+            if (options.includeTimberLogs || options.includeOkHttpLogs || options.includeLogcat || screenshotBase64 != null) {
                 val gistResult = gistService.createLogsGistFromCollectors(
                     includeTimber = options.includeTimberLogs,
                     includeOkHttp = options.includeOkHttpLogs,
                     includeLogcat = options.includeLogcat,
+                    screenshotBase64 = screenshotBase64,
                     issueTitle = options.title
                 )
 
@@ -103,7 +113,8 @@ class IssueService(
                 gistUrl = gistUrl,
                 includeDeviceInfo = options.includeDeviceInfo,
                 includeAppInfo = options.includeAppInfo,
-                screenshotUris = options.screenshotUris
+                screenshotUris = options.screenshotUris,
+                hasGist = gistUrl != null
             )
 
             // Combine default labels with additional labels
@@ -142,7 +153,8 @@ class IssueService(
         gistUrl: String?,
         includeDeviceInfo: Boolean,
         includeAppInfo: Boolean,
-        screenshotUris: List<Uri>
+        screenshotUris: List<Uri>,
+        hasGist: Boolean
     ): String = buildString {
         // User description
         appendLine("## Description")
@@ -154,8 +166,12 @@ class IssueService(
         if (screenshotUris.isNotEmpty()) {
             appendLine("## Screenshots")
             appendLine()
-            appendLine("*${screenshotUris.size} screenshot(s) were selected but cannot be uploaded via API.*")
-            appendLine("*Please attach them manually if needed.*")
+            if (hasGist) {
+                appendLine("*${screenshotUris.size} screenshot(s) included in the Gist linked below.*")
+            } else {
+                appendLine("*${screenshotUris.size} screenshot(s) were selected but could not be uploaded.*")
+                appendLine("*Please attach them manually if needed.*")
+            }
             appendLine()
         }
 

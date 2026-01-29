@@ -8,36 +8,18 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.OpenInBrowser
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import android.widget.Toast
+import com.ghreporter.ui.components.AuthDialog
 import com.ghreporter.ui.screens.IssueFormScreen
-import com.ghreporter.ui.screens.LoginScreen
 import com.ghreporter.ui.theme.GHReporterTheme
 
 /**
@@ -73,6 +55,28 @@ fun GHReporterScreen(
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
+    // Observe toast messages (informational only, don't close)
+    LaunchedEffect(Unit) {
+        viewModel.toastMessages.collect { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Observe issue created event (show toast and close activity)
+    LaunchedEffect(Unit) {
+        viewModel.issueCreatedEvent.collect {
+            Toast.makeText(context, "Issue created successfully", Toast.LENGTH_LONG).show()
+            onDismiss()
+        }
+    }
+
+    // Auto-trigger authentication when not authenticated
+    LaunchedEffect(uiState.isAuthenticated) {
+        if (!uiState.isAuthenticated && !uiState.isAuthLoading && uiState.authUserCode == null) {
+            viewModel.signIn()
+        }
+    }
+
     // Photo picker launcher
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -80,154 +84,51 @@ fun GHReporterScreen(
         viewModel.setScreenshotUri(uri)
     }
 
-    AnimatedContent(
-        targetState = when {
-            uiState.submissionSuccess -> ScreenState.Success
-            uiState.isAuthenticated -> ScreenState.Form
-            else -> ScreenState.Login
-        },
-        transitionSpec = {
-            fadeIn() togetherWith fadeOut()
-        },
-        label = "screen_transition"
-    ) { screenState ->
-        when (screenState) {
-            ScreenState.Login -> {
-                LoginScreen(
-                    isLoading = uiState.isAuthLoading,
-                    userCode = uiState.authUserCode,
-                    verificationUri = uiState.authVerificationUri,
-                    errorMessage = uiState.authError,
-                    onSignInClick = { viewModel.signIn(context) },
-                    onOpenBrowserClick = { viewModel.openVerificationUrl(context) },
-                    onDismiss = onDismiss
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Always show the issue form
+        IssueFormScreen(
+            username = uiState.username,
+            avatarUrl = uiState.avatarUrl,
+            title = uiState.title,
+            body = uiState.body,
+            selectedLabels = uiState.selectedLabels,
+            availableLabels = uiState.availableLabels,
+            includeTimberLogs = uiState.includeTimberLogs,
+            includeNetworkLogs = uiState.includeNetworkLogs,
+            includeLogcat = uiState.includeLogcat,
+            includeDeviceInfo = uiState.includeDeviceInfo,
+            includeScreenshot = uiState.includeScreenshot,
+            screenshotUri = uiState.screenshotUri,
+            isSubmitting = uiState.isSubmitting,
+            errorMessage = uiState.submissionError,
+            onTitleChange = viewModel::updateTitle,
+            onBodyChange = viewModel::updateBody,
+            onLabelToggle = viewModel::toggleLabel,
+            onIncludeTimberLogsChange = viewModel::setIncludeTimberLogs,
+            onIncludeNetworkLogsChange = viewModel::setIncludeNetworkLogs,
+            onIncludeLogcatChange = viewModel::setIncludeLogcat,
+            onIncludeDeviceInfoChange = viewModel::setIncludeDeviceInfo,
+            onIncludeScreenshotChange = viewModel::setIncludeScreenshot,
+            onPickScreenshot = {
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                 )
-            }
+            },
+            onRemoveScreenshot = viewModel::removeScreenshot,
+            onSubmit = viewModel::submitIssue,
+            onSignOut = viewModel::signOut,
+            onDismiss = onDismiss
+        )
 
-            ScreenState.Form -> {
-                IssueFormScreen(
-                    username = uiState.username,
-                    avatarUrl = uiState.avatarUrl,
-                    title = uiState.title,
-                    body = uiState.body,
-                    selectedLabels = uiState.selectedLabels,
-                    availableLabels = uiState.availableLabels,
-                    includeTimberLogs = uiState.includeTimberLogs,
-                    includeNetworkLogs = uiState.includeNetworkLogs,
-                    includeLogcat = uiState.includeLogcat,
-                    includeDeviceInfo = uiState.includeDeviceInfo,
-                    includeScreenshot = uiState.includeScreenshot,
-                    screenshotUri = uiState.screenshotUri,
-                    isSubmitting = uiState.isSubmitting,
-                    errorMessage = uiState.submissionError,
-                    onTitleChange = viewModel::updateTitle,
-                    onBodyChange = viewModel::updateBody,
-                    onLabelToggle = viewModel::toggleLabel,
-                    onIncludeTimberLogsChange = viewModel::setIncludeTimberLogs,
-                    onIncludeNetworkLogsChange = viewModel::setIncludeNetworkLogs,
-                    onIncludeLogcatChange = viewModel::setIncludeLogcat,
-                    onIncludeDeviceInfoChange = viewModel::setIncludeDeviceInfo,
-                    onIncludeScreenshotChange = viewModel::setIncludeScreenshot,
-                    onPickScreenshot = {
-                        photoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    onRemoveScreenshot = viewModel::removeScreenshot,
-                    onSubmit = viewModel::submitIssue,
-                    onSignOut = viewModel::signOut,
-                    onDismiss = onDismiss
-                )
-            }
-
-            ScreenState.Success -> {
-                SuccessScreen(
-                    issueUrl = uiState.createdIssueUrl,
-                    onOpenIssue = {
-                        uiState.createdIssueUrl?.let { url ->
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                Uri.parse(url)
-                            )
-                            context.startActivity(intent)
-                        }
-                    },
-                    onDismiss = onDismiss
-                )
-            }
-        }
-    }
-}
-
-private enum class ScreenState {
-    Login,
-    Form,
-    Success
-}
-
-@Composable
-private fun SuccessScreen(
-    issueUrl: String?,
-    onOpenIssue: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = Icons.Default.CheckCircle,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 16.dp)
+        // Show auth dialog overlay when not authenticated
+        if (!uiState.isAuthenticated) {
+            AuthDialog(
+                isLoading = uiState.isAuthLoading,
+                userCode = uiState.authUserCode,
+                verificationUri = uiState.authVerificationUri,
+                errorMessage = uiState.authError,
+                onCancel = onDismiss
             )
-
-            Text(
-                text = "Issue Created!",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Your issue has been successfully submitted to GitHub.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            if (issueUrl != null) {
-                Button(
-                    onClick = onOpenIssue,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.OpenInBrowser,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = "View Issue on GitHub",
-                        modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            OutlinedButton(
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Done")
-            }
         }
     }
 }

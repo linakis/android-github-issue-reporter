@@ -68,6 +68,7 @@ object GHReporter {
      *
      * @param context Application context
      * @param config SDK configuration
+     * @throws IllegalArgumentException if configuration is invalid
      */
     @JvmStatic
     fun init(context: Context, config: GHReporterConfig) {
@@ -75,9 +76,50 @@ object GHReporter {
             return
         }
 
+        // Validate configuration
+        validateConfig(config)
+
         this.applicationContext = context.applicationContext
         this.config = config
         this.isInitialized = true
+    }
+
+    /**
+     * Validates the SDK configuration.
+     */
+    private fun validateConfig(config: GHReporterConfig) {
+        require(config.githubOwner.isNotBlank()) {
+            "githubOwner cannot be empty"
+        }
+        require(config.githubRepo.isNotBlank()) {
+            "githubRepo cannot be empty"
+        }
+        require(config.githubClientId.isNotBlank()) {
+            "githubClientId cannot be empty"
+        }
+        
+        // Check for placeholder values
+        if (config.githubOwner in listOf("your-org", "your-username", "REPLACE_ME")) {
+            throw IllegalArgumentException(
+                "GitHub owner is still set to placeholder value: '${config.githubOwner}'. " +
+                "Please update with your actual GitHub username or organization."
+            )
+        }
+        if (config.githubRepo in listOf("your-repo", "REPLACE_ME")) {
+            throw IllegalArgumentException(
+                "GitHub repo is still set to placeholder value: '${config.githubRepo}'. " +
+                "Please update with your actual repository name."
+            )
+        }
+        if (config.githubClientId.startsWith("Iv1.x") || config.githubClientId == "REPLACE_ME") {
+            throw IllegalArgumentException(
+                "GitHub Client ID is still set to placeholder value. " +
+                "To fix this:\n" +
+                "1. Go to https://github.com/settings/developers\n" +
+                "2. Create a new OAuth App with Device Flow enabled\n" +
+                "3. Copy the Client ID and update your GHReporterConfig"
+            )
+        }
     }
 
     /**

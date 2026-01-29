@@ -1,0 +1,16 @@
+# GHReporter Sample App Configuration
+# Copy this file to local.properties and fill in your values.
+# 
+# IMPORTANT: local.properties is gitignored and should NOT be committed.
+# This example file IS committed to help developers get started.
+
+# Your GitHub username or organization where issues will be created
+ghreporter.owner=your-github-username
+
+# The repository name where issues will be created
+ghreporter.repo=your-repo-name
+
+# Your GitHub OAuth App Client ID
+# Create one at: https://github.com/settings/developers
+# Make sure to enable "Device Flow" in the OAuth App settings
+ghreporter.clientId=your-oauth-app-client-id

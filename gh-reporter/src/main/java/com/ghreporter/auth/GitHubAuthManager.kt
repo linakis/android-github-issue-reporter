@@ -1,16 +1,16 @@
 package com.ghreporter.auth
 
 import android.content.Context
-import android.net.Uri
-import androidx.browser.customtabs.CustomTabsIntent
 import com.ghreporter.GHReporter
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import com.squareup.moshi.Moshi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -151,14 +151,11 @@ class GitHubAuthManager(
      * This will:
      * 1. Request a device code from GitHub
      * 2. Update state with the user code to display
-     * 3. Optionally open the verification URL in a browser
-     * 4. Poll until user completes authentication
+     * 3. Poll until user completes authentication
      *
-     * @param context Context to open browser
-     * @param openBrowser Whether to automatically open the browser
      * @return AuthResult indicating success, error, or cancellation
      */
-    suspend fun signInWithGitHub(context: Context, openBrowser: Boolean = true): AuthResult {
+    suspend fun signInWithGitHub(): AuthResult {
         _authState.value = AuthState.Loading
 
         // Step 1: Request device code
@@ -171,18 +168,13 @@ class GitHubAuthManager(
 
         val deviceCode = deviceCodeResult.getOrThrow()
 
-        // Step 2: Update state with user code
+        // Step 2: Update state with user code for display
         _authState.value = AuthState.WaitingForUserCode(
             userCode = deviceCode.userCode,
             verificationUri = deviceCode.verificationUri
         )
 
-        // Step 3: Open browser if requested
-        if (openBrowser) {
-            openVerificationUrl(context, deviceCode.verificationUri)
-        }
-
-        // Step 4: Poll for access token
+        // Step 3: Poll for access token
         val pollResult = pollForAccessToken(
             deviceCode = deviceCode.deviceCode,
             interval = deviceCode.interval,
@@ -231,20 +223,9 @@ class GitHubAuthManager(
     }
 
     /**
-     * Open the verification URL in a Custom Tab.
-     */
-    fun openVerificationUrl(context: Context, url: String) {
-        val customTabsIntent = CustomTabsIntent.Builder()
-            .setShowTitle(true)
-            .build()
-        
-        customTabsIntent.launchUrl(context, Uri.parse(url))
-    }
-
-    /**
      * Request a device code from GitHub.
      */
-    private fun requestDeviceCode(): Result<DeviceCodeResponse> {
+    private suspend fun requestDeviceCode(): Result<DeviceCodeResponse> = withContext(Dispatchers.IO) {
         val requestBody = FormBody.Builder()
             .add("client_id", clientId)
             .add("scope", "repo gist read:user user:email")
@@ -256,17 +237,29 @@ class GitHubAuthManager(
             .post(requestBody)
             .build()
 
-        return try {
+        try {
             val response = httpClient.newCall(request).execute()
-            val body = response.body?.string() ?: return Result.failure(IOException("Empty response"))
+            val body = response.body?.string() ?: return@withContext Result.failure(IOException("Empty response"))
 
             if (!response.isSuccessful) {
-                return Result.failure(IOException("HTTP ${response.code}: $body"))
+                // Provide helpful error messages for common issues
+                val errorMessage = when (response.code) {
+                    400, 401, 403 -> {
+                        "Invalid GitHub Client ID. Please check your GHReporterConfig.\n\n" +
+                        "To fix this:\n" +
+                        "1. Create a GitHub OAuth App at https://github.com/settings/developers\n" +
+                        "2. Select 'New OAuth App' and enable Device Flow\n" +
+                        "3. Copy the Client ID and update your GHReporterConfig\n\n" +
+                        "Current Client ID: ${clientId.take(10)}..."
+                    }
+                    else -> "Failed to get device code: HTTP ${response.code}"
+                }
+                return@withContext Result.failure(IOException(errorMessage))
             }
 
             val adapter = moshi.adapter(DeviceCodeResponse::class.java)
             val deviceCode = adapter.fromJson(body)
-                ?: return Result.failure(IOException("Failed to parse device code response"))
+                ?: return@withContext Result.failure(IOException("Failed to parse device code response"))
 
             Result.success(deviceCode)
         } catch (e: Exception) {
@@ -303,7 +296,9 @@ class GitHubAuthManager(
                 .build()
 
             try {
-                val response = httpClient.newCall(request).execute()
+                val response = withContext(Dispatchers.IO) {
+                    httpClient.newCall(request).execute()
+                }
                 val body = response.body?.string() ?: continue
 
                 val tokenResponse = tokenAdapter.fromJson(body) ?: continue
@@ -348,18 +343,18 @@ class GitHubAuthManager(
     /**
      * Fetch user info from GitHub API.
      */
-    private fun fetchUserInfo(accessToken: String): GitHubUser? {
+    private suspend fun fetchUserInfo(accessToken: String): GitHubUser? = withContext(Dispatchers.IO) {
         val request = Request.Builder()
             .url("https://api.github.com/user")
             .addHeader("Authorization", "Bearer $accessToken")
             .addHeader("Accept", "application/vnd.github+json")
             .build()
 
-        return try {
+        try {
             val response = httpClient.newCall(request).execute()
-            val body = response.body?.string() ?: return null
+            val body = response.body?.string() ?: return@withContext null
 
-            if (!response.isSuccessful) return null
+            if (!response.isSuccessful) return@withContext null
 
             val adapter = moshi.adapter(GitHubUser::class.java)
             adapter.fromJson(body)
@@ -377,15 +372,14 @@ class GitHubAuthManager(
     }
 
     /**
-     * Re-authenticate if the current session has expired.
+     * Re-authenticate the user (clears current session and starts fresh).
      * Call this if API calls start failing with 401.
      *
-     * @param context Context to open browser
      * @return AuthResult
      */
-    suspend fun reAuthenticate(context: Context): AuthResult {
+    suspend fun reAuthenticate(): AuthResult {
         signOut()
-        return signInWithGitHub(context)
+        return signInWithGitHub()
     }
 
     companion object {

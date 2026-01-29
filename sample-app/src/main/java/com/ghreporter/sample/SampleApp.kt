@@ -17,13 +17,16 @@ class SampleApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // Validate credentials are configured in local.properties
+        validateCredentials()
+
         // 1. Initialize GHReporter
         GHReporter.init(
             context = this,
             config = GHReporterConfig(
-                githubOwner = "your-org",           // TODO: Replace with your GitHub org/user
-                githubRepo = "your-repo",           // TODO: Replace with your repo name
-                githubClientId = "Iv1.xxxxxxxxxx",  // TODO: Replace with your OAuth App client ID
+                githubOwner = BuildConfig.GITHUB_OWNER,
+                githubRepo = BuildConfig.GITHUB_REPO,
+                githubClientId = BuildConfig.GITHUB_CLIENT_ID,
                 defaultLabels = listOf("bug", "from-app"),
                 maxTimberLogEntries = 500,
                 maxOkHttpLogEntries = 50,
@@ -45,5 +48,43 @@ class SampleApp : Application() {
             .build()
 
         Timber.i("SampleApp initialized with GHReporter SDK")
+    }
+
+    /**
+     * Validates that required GHReporter credentials are configured in local.properties.
+     * Throws IllegalStateException with helpful instructions if any are missing.
+     */
+    private fun validateCredentials() {
+        val missingFields = mutableListOf<String>()
+
+        if (BuildConfig.GITHUB_OWNER.isBlank()) missingFields.add("ghreporter.owner")
+        if (BuildConfig.GITHUB_REPO.isBlank()) missingFields.add("ghreporter.repo")
+        if (BuildConfig.GITHUB_CLIENT_ID.isBlank()) missingFields.add("ghreporter.clientId")
+
+        if (missingFields.isNotEmpty()) {
+            throw IllegalStateException(
+                """
+                |
+                |========================================
+                | GHReporter Sample App - Configuration Required
+                |========================================
+                |
+                | Missing properties in local.properties:
+                |   ${missingFields.joinToString("\n|   ")}
+                |
+                | To fix this:
+                | 1. Copy local.properties.example to local.properties
+                | 2. Fill in your GitHub OAuth App credentials
+                |
+                | Example local.properties:
+                |   ghreporter.owner=your-github-username
+                |   ghreporter.repo=your-repo-name
+                |   ghreporter.clientId=your-oauth-app-client-id
+                |
+                | See README.md for setup instructions.
+                |========================================
+                """.trimMargin()
+            )
+        }
     }
 }

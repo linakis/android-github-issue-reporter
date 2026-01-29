@@ -1,16 +1,16 @@
 # GHReporter - Android GitHub Issue Reporter SDK
 
-An Android SDK for reporting GitHub issues with shake-to-report functionality. Automatically collects logs from Timber, OkHttp, and Logcat, uploads them as private GitHub Gists, and creates GitHub issues.
+An Android SDK for reporting GitHub issues with shake-to-report functionality. Automatically collects logs from Timber, OkHttp, and Logcat, uploads them as private GitHub Gists, and creates GitHub issues with Device Flow OAuth authentication.
 
 ## Features
 
 - **Shake-to-Report**: Shake detection triggers the issue reporter
 - **Log Collection**: Captures Timber logs, OkHttp network requests, and Logcat
 - **Private Gists**: Logs are uploaded as private GitHub Gists (linked in issue body)
+- **Screenshot Support**: Attach screenshots to reports (uploaded to Gist)
 - **GitHub OAuth**: Device Flow authentication (no Firebase required)
-- **Jetpack Compose UI**: Modern Material3 design
-- **Screenshot Support**: Attach screenshots to reports
-- **Customizable**: Configure labels, log limits, shake sensitivity
+- **Jetpack Compose UI**: Modern Material3 design with auto-triggered auth dialog
+- **Customizable**: Configure labels, log limits, shake sensitivity, screenshot size
 
 ## Installation
 
@@ -74,6 +74,34 @@ dependencies {
     implementation(project(":gh-reporter"))
 }
 ```
+
+## Running the Sample App
+
+The sample app demonstrates GHReporter SDK integration. To run it:
+
+### 1. Configure Credentials
+
+**Copy the example file:**
+```bash
+cp local.properties.example local.properties
+```
+
+**Edit `local.properties`** and add your GitHub OAuth App credentials:
+```properties
+ghreporter.owner=your-github-username
+ghreporter.repo=your-repo-name
+ghreporter.clientId=your-oauth-app-client-id
+```
+
+> **Important:** `local.properties` is gitignored and will NOT be committed. See "Setup" section below for instructions on creating a GitHub OAuth App.
+
+### 2. Build and Run
+
+```bash
+./gradlew :sample-app:installDebug
+```
+
+If credentials are missing, the app will crash on startup with a helpful error message explaining what's needed.
 
 ## Setup
 
@@ -184,23 +212,79 @@ button.setOnClickListener {
 | `shakeCooldownMs` | Long | 1000 | Cooldown between detections |
 | `includeDeviceInfo` | Boolean | true | Include device info in issue |
 | `includeAppInfo` | Boolean | true | Include app version in issue |
+| `screenshotMaxWidth` | Int | 480 | Max width for uploaded screenshots (px) |
 
 ## Authentication
 
 GHReporter uses GitHub's [Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) for authentication:
 
-1. User clicks "Sign in with GitHub"
+1. When user opens GHReporter, auth dialog automatically appears if not signed in
 2. SDK requests a device code from GitHub
-3. User code is displayed (e.g., "ABCD-1234")
-4. User opens github.com/login/device in browser
-5. User enters the code
+3. User code is displayed in a non-dismissable dialog (e.g., "ABCD-1234")
+4. User manually opens github.com/login/device in browser
+5. User enters the code to authorize the app
 6. SDK polls until authentication completes
-7. Access token is stored securely
+7. Toast message "Signed in as {username}" appears
+8. Access token is stored securely using EncryptedSharedPreferences
+9. Issue form becomes accessible
 
 **Benefits of Device Flow:**
 - No client secret needed in the app
 - No redirect URI handling required
 - Works on any device
+- Secure token storage with Android Keystore
+
+## Screenshots
+
+When users select a screenshot from the issue form:
+
+1. **Processing**: Image is resized to `screenshotMaxWidth` (default 480px) and compressed to JPEG 80% quality
+2. **Encoding**: Image is Base64-encoded for upload
+3. **Gist Upload**: Screenshot is included in the private Gist as `screenshot.html` with embedded image
+4. **Issue Reference**: Issue body includes message like "*1 screenshot(s) included in the Gist linked below.*"
+
+If Gist upload fails, issue body will note: "*1 screenshot(s) were selected but could not be uploaded. Please attach them manually if needed.*"
+
+## Created Issues
+
+When a user submits an issue, the following information is included:
+
+### Issue Body
+
+```markdown
+## Description
+
+[User-provided issue description]
+
+## Device Information
+
+- **Device**: [Manufacturer Model]
+- **Android Version**: [OS Version] (API [Level])
+- **App Version**: [App Name] v[Version] ([Build])
+
+## Reproduction Steps
+
+[User-provided steps]
+
+[If screenshot selected]:
+*1 screenshot(s) included in the Gist linked below.*
+
+## Logs
+
+[Link to private Gist with logs]
+```
+
+### Private Gist Contents
+
+The linked Gist (named `{repo}_{timestamp}.md`) contains:
+
+1. **Summary**: Same as issue body (device info, description, steps)
+2. **Timber Logs**: `timber_logs.txt` - Application logs from Timber tree
+3. **OkHttp Logs**: `okhttp_logs.txt` - Network request/response logs
+4. **Logcat**: `logcat.txt` - System logs from logcat
+5. **Screenshot**: `screenshot.html` (if included) - Embedded Base64 image
+
+Example Gist filename: `android-github-issue-reporter_20260129-143052.md`
 
 ## Required OAuth Scopes
 
@@ -229,11 +313,14 @@ gh-reporter/
 │   └── IssueService        # Issue creation
 ├── shake/
 │   └── ShakeDetector       # Accelerometer detection
+├── utils/
+│   └── ImageUtils          # Screenshot processing
 └── ui/
     ├── GHReporterActivity  # Main UI orchestration
     ├── ReporterViewModel   # State management
+    ├── components/
+    │   └── AuthDialog      # Non-dismissable Device Flow UI
     ├── screens/
-    │   ├── LoginScreen     # Device Flow UI
     │   └── IssueFormScreen # Issue form
     └── theme/
         └── Theme.kt        # Material3 theming

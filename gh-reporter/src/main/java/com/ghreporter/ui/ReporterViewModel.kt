@@ -10,8 +10,11 @@ import com.ghreporter.api.GistService
 import com.ghreporter.api.IssueService
 import com.ghreporter.auth.GitHubAuthManager
 import com.ghreporter.auth.SecureTokenStorage
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -53,13 +56,18 @@ class ReporterViewModel(
 
         // Submission state
         val isSubmitting: Boolean = false,
-        val submissionError: String? = null,
-        val submissionSuccess: Boolean = false,
-        val createdIssueUrl: String? = null
+        val submissionError: String? = null
     )
 
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    // One-time events
+    private val _toastMessages = MutableSharedFlow<String>()
+    val toastMessages: SharedFlow<String> = _toastMessages.asSharedFlow()
+
+    private val _issueCreatedEvent = MutableSharedFlow<Unit>()
+    val issueCreatedEvent: SharedFlow<Unit> = _issueCreatedEvent.asSharedFlow()
 
     init {
         // Observe auth state
@@ -67,6 +75,7 @@ class ReporterViewModel(
             authManager.observeAuthState().collect { authState ->
                 when (authState) {
                     is GitHubAuthManager.AuthState.Authenticated -> {
+                        val wasNotAuthenticated = !_uiState.value.isAuthenticated
                         _uiState.update {
                             it.copy(
                                 isAuthenticated = true,
@@ -77,6 +86,10 @@ class ReporterViewModel(
                                 username = authState.username,
                                 avatarUrl = authState.avatarUrl
                             )
+                        }
+                        // Show success toast only if user just authenticated (not on initial load)
+                        if (wasNotAuthenticated && authState.username != null) {
+                            _toastMessages.emit("Signed in as ${authState.username}")
                         }
                     }
                     is GitHubAuthManager.AuthState.WaitingForUserCode -> {
@@ -131,15 +144,10 @@ class ReporterViewModel(
         }
     }
 
-    fun signIn(context: Context) {
+    fun signIn() {
         viewModelScope.launch {
-            authManager.signInWithGitHub(context, openBrowser = true)
+            authManager.signInWithGitHub()
         }
-    }
-
-    fun openVerificationUrl(context: Context) {
-        val uri = _uiState.value.authVerificationUri ?: return
-        authManager.openVerificationUrl(context, uri)
     }
 
     fun signOut() {
@@ -232,13 +240,8 @@ class ReporterViewModel(
 
                 when (result) {
                     is IssueService.IssueResult.Success -> {
-                        _uiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                submissionSuccess = true,
-                                createdIssueUrl = result.issue.htmlUrl
-                            )
-                        }
+                        _uiState.update { it.copy(isSubmitting = false) }
+                        _issueCreatedEvent.emit(Unit)
                     }
                     is IssueService.IssueResult.Error -> {
                         _uiState.update {

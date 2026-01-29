@@ -15,6 +15,7 @@ package com.ghreporter
  * @property shakeCooldownMs Cooldown between shake detections in milliseconds (default: 1000)
  * @property includeDeviceInfo Whether to include device info in issue body (default: true)
  * @property includeAppInfo Whether to include app version info in issue body (default: true)
+ * @property screenshotMaxWidth Maximum width in pixels for uploaded screenshots (default: 480)
  */
 data class GHReporterConfig(
     val githubOwner: String,
@@ -28,7 +29,8 @@ data class GHReporterConfig(
     val shakeThresholdG: Float = 2.7f,
     val shakeCooldownMs: Long = 1000L,
     val includeDeviceInfo: Boolean = true,
-    val includeAppInfo: Boolean = true
+    val includeAppInfo: Boolean = true,
+    val screenshotMaxWidth: Int = 480
 ) {
     init {
         require(githubOwner.isNotBlank()) { "githubOwner must not be blank" }
@@ -39,6 +41,7 @@ data class GHReporterConfig(
         require(maxLogcatLines > 0) { "maxLogcatLines must be positive" }
         require(shakeThresholdG > 0) { "shakeThresholdG must be positive" }
         require(shakeCooldownMs > 0) { "shakeCooldownMs must be positive" }
+        require(screenshotMaxWidth > 0) { "screenshotMaxWidth must be positive" }
     }
 
     /**
@@ -58,6 +61,7 @@ data class GHReporterConfig(
         private var shakeCooldownMs: Long = 1000L
         private var includeDeviceInfo: Boolean = true
         private var includeAppInfo: Boolean = true
+        private var screenshotMaxWidth: Int = 480
 
         fun maxTimberLogEntries(value: Int) = apply { maxTimberLogEntries = value }
         fun maxOkHttpLogEntries(value: Int) = apply { maxOkHttpLogEntries = value }
@@ -68,6 +72,7 @@ data class GHReporterConfig(
         fun shakeCooldownMs(value: Long) = apply { shakeCooldownMs = value }
         fun includeDeviceInfo(value: Boolean) = apply { includeDeviceInfo = value }
         fun includeAppInfo(value: Boolean) = apply { includeAppInfo = value }
+        fun screenshotMaxWidth(value: Int) = apply { screenshotMaxWidth = value }
 
         fun build() = GHReporterConfig(
             githubOwner = githubOwner,
@@ -81,7 +86,8 @@ data class GHReporterConfig(
             shakeThresholdG = shakeThresholdG,
             shakeCooldownMs = shakeCooldownMs,
             includeDeviceInfo = includeDeviceInfo,
-            includeAppInfo = includeAppInfo
+            includeAppInfo = includeAppInfo,
+            screenshotMaxWidth = screenshotMaxWidth
         )
     }
 

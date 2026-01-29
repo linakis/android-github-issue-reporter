@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -16,6 +18,29 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Read GHReporter credentials from local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.inputStream().use { localProperties.load(it) }
+        }
+
+        buildConfigField(
+            "String",
+            "GITHUB_OWNER",
+            "\"${localProperties.getProperty("ghreporter.owner", "")}\""
+        )
+        buildConfigField(
+            "String",
+            "GITHUB_REPO",
+            "\"${localProperties.getProperty("ghreporter.repo", "")}\""
+        )
+        buildConfigField(
+            "String",
+            "GITHUB_CLIENT_ID",
+            "\"${localProperties.getProperty("ghreporter.clientId", "")}\""
+        )
     }
 
     buildTypes {
@@ -39,6 +64,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
