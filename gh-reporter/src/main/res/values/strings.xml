@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ghreporter_lib_name">GHReporter</string>
+    <string name="ghreporter_report_issue">Report Issue</string>
+    <string name="ghreporter_title_hint">Issue title</string>
+    <string name="ghreporter_description_hint">Describe the issue...</string>
+    <string name="ghreporter_attach_timber_logs">Attach Timber logs</string>
+    <string name="ghreporter_attach_okhttp_logs">Attach network logs</string>
+    <string name="ghreporter_attach_logcat">Attach logcat</string>
+    <string name="ghreporter_attach_screenshots">Attach screenshots</string>
+    <string name="ghreporter_submit">Submit Issue</string>
+    <string name="ghreporter_cancel">Cancel</string>
+    <string name="ghreporter_login_github">Sign in with GitHub</string>
+    <string name="ghreporter_login_required">GitHub login required to submit issues</string>
+    <string name="ghreporter_submitting">Submitting issue...</string>
+    <string name="ghreporter_success">Issue submitted successfully!</string>
+    <string name="ghreporter_error">Failed to submit issue</string>
+    <string name="ghreporter_add_screenshot">Add screenshot</string>
+    <string name="ghreporter_no_screenshots">No screenshots selected</string>
+</resources>
