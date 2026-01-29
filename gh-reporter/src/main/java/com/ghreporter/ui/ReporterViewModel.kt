@@ -2,33 +2,25 @@ package com.ghreporter.ui
 
 import android.content.Context
 import android.net.Uri
-import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ghreporter.GHReporter
 import com.ghreporter.api.GistService
-import com.ghreporter.api.GitHubApiClient
 import com.ghreporter.api.IssueService
 import com.ghreporter.auth.GitHubAuthManager
 import com.ghreporter.auth.SecureTokenStorage
-import com.ghreporter.collectors.GHReporterInterceptor
-import com.ghreporter.collectors.GHReporterTree
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * ViewModel for the GHReporter issue submission flow.
  */
 class ReporterViewModel(
     private val authManager: GitHubAuthManager,
-    private val gistService: GistService,
     private val issueService: IssueService,
     private val context: Context
 ) : ViewModel() {
@@ -209,53 +201,54 @@ class ReporterViewModel(
             _uiState.update { it.copy(isSubmitting = true, submissionError = null) }
 
             try {
-                // Collect logs
-                val logsContent = buildLogsContent(state)
-
-                // Create gist with logs if we have any
-                var gistUrl: String? = null
-                if (logsContent.isNotBlank()) {
-                    val gistResult = gistService.createGist(
-                        description = "Logs for: ${state.title}",
-                        filename = "issue-logs.md",
-                        content = logsContent,
-                        isPublic = false
-                    )
-                    gistUrl = gistResult.getOrNull()?.htmlUrl
+                // Process screenshot if included
+                val screenshotUris = if (state.includeScreenshot && state.screenshotUri != null) {
+                    listOf(state.screenshotUri)
+                } else {
+                    emptyList()
                 }
 
-                // Build issue body
-                val issueBody = buildIssueBody(state, gistUrl)
-
-                // Create issue
-                val config = GHReporter.getConfig()
-                val issueResult = issueService.createIssue(
-                    owner = config.githubOwner,
-                    repo = config.githubRepo,
+                // Build issue options
+                val options = IssueService.IssueOptions(
                     title = state.title,
-                    body = issueBody,
-                    labels = state.selectedLabels.toList()
+                    description = state.body,
+                    includeTimberLogs = state.includeTimberLogs,
+                    includeOkHttpLogs = state.includeNetworkLogs,
+                    includeLogcat = state.includeLogcat,
+                    includeDeviceInfo = state.includeDeviceInfo,
+                    includeAppInfo = state.includeDeviceInfo,
+                    screenshotUris = screenshotUris,
+                    additionalLabels = state.selectedLabels.toList()
                 )
 
-                issueResult.fold(
-                    onSuccess = { issue ->
+                // Create issue using IssueService
+                val config = GHReporter.getConfig()
+                val result = issueService.createIssue(
+                    context = context,
+                    owner = config.githubOwner,
+                    repo = config.githubRepo,
+                    options = options
+                )
+
+                when (result) {
+                    is IssueService.IssueResult.Success -> {
                         _uiState.update {
                             it.copy(
                                 isSubmitting = false,
                                 submissionSuccess = true,
-                                createdIssueUrl = issue.htmlUrl
-                            )
-                        }
-                    },
-                    onFailure = { error ->
-                        _uiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                submissionError = error.message ?: "Failed to create issue"
+                                createdIssueUrl = result.issue.htmlUrl
                             )
                         }
                     }
-                )
+                    is IssueService.IssueResult.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isSubmitting = false,
+                                submissionError = result.message
+                            )
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -267,117 +260,6 @@ class ReporterViewModel(
         }
     }
 
-    private suspend fun buildLogsContent(state: UiState): String {
-        val sections = mutableListOf<String>()
-
-        if (state.includeTimberLogs) {
-            val timberLogs = GHReporter.getTimberLogs()
-            if (timberLogs.isNotEmpty()) {
-                sections.add(formatTimberLogs(timberLogs))
-            }
-        }
-
-        if (state.includeNetworkLogs) {
-            val networkLogs = GHReporter.getNetworkLogs()
-            if (networkLogs.isNotEmpty()) {
-                sections.add(formatNetworkLogs(networkLogs))
-            }
-        }
-
-        if (state.includeLogcat) {
-            val logcat = GHReporter.collectLogcat()
-            if (logcat.isNotBlank()) {
-                sections.add("## Logcat\n```\n$logcat\n```")
-            }
-        }
-
-        return sections.joinToString("\n\n---\n\n")
-    }
-
-    private fun formatTimberLogs(logs: List<GHReporterTree.LogEntry>): String {
-        val sb = StringBuilder()
-        sb.appendLine("## App Logs (Timber)")
-        sb.appendLine("```")
-        logs.forEach { entry ->
-            val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(entry.timestamp))
-            sb.appendLine("[$time] ${entry.level}/${entry.tag}: ${entry.message}")
-            entry.throwable?.let { sb.appendLine(it) }
-        }
-        sb.appendLine("```")
-        return sb.toString()
-    }
-
-    private fun formatNetworkLogs(logs: List<GHReporterInterceptor.NetworkLogEntry>): String {
-        val sb = StringBuilder()
-        sb.appendLine("## Network Logs")
-        logs.forEach { entry ->
-            val time = SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(Date(entry.timestamp))
-            sb.appendLine("\n### [$time] ${entry.method} ${entry.url}")
-            sb.appendLine("**Status:** ${entry.responseCode} (${entry.durationMs}ms)")
-            if (entry.requestHeaders.isNotEmpty()) {
-                sb.appendLine("\n<details><summary>Request Headers</summary>\n")
-                sb.appendLine("```")
-                entry.requestHeaders.forEach { (k, v) -> sb.appendLine("$k: $v") }
-                sb.appendLine("```")
-                sb.appendLine("</details>")
-            }
-            entry.requestBody?.let { body ->
-                sb.appendLine("\n<details><summary>Request Body</summary>\n")
-                sb.appendLine("```json")
-                sb.appendLine(body.take(10000))
-                sb.appendLine("```")
-                sb.appendLine("</details>")
-            }
-            entry.responseBody?.let { body ->
-                sb.appendLine("\n<details><summary>Response Body</summary>\n")
-                sb.appendLine("```json")
-                sb.appendLine(body.take(10000))
-                sb.appendLine("```")
-                sb.appendLine("</details>")
-            }
-        }
-        return sb.toString()
-    }
-
-    private fun buildIssueBody(state: UiState, gistUrl: String?): String {
-        val sb = StringBuilder()
-
-        // User description
-        if (state.body.isNotBlank()) {
-            sb.appendLine(state.body)
-            sb.appendLine()
-        }
-
-        // Device info
-        if (state.includeDeviceInfo) {
-            sb.appendLine("## Device Information")
-            sb.appendLine("| Property | Value |")
-            sb.appendLine("|----------|-------|")
-            sb.appendLine("| Device | ${Build.MANUFACTURER} ${Build.MODEL} |")
-            sb.appendLine("| Android | ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) |")
-            try {
-                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                sb.appendLine("| App Version | ${packageInfo.versionName} (${packageInfo.longVersionCode}) |")
-            } catch (e: Exception) {
-                // Ignore
-            }
-            sb.appendLine()
-        }
-
-        // Logs gist link
-        if (gistUrl != null) {
-            sb.appendLine("## Logs")
-            sb.appendLine("[View detailed logs]($gistUrl)")
-            sb.appendLine()
-        }
-
-        // Footer
-        sb.appendLine("---")
-        sb.appendLine("*Reported via GHReporter SDK*")
-
-        return sb.toString()
-    }
-
     companion object {
         fun factory(context: Context): ViewModelProvider.Factory {
             return object : ViewModelProvider.Factory {
@@ -386,13 +268,11 @@ class ReporterViewModel(
                     val appContext = context.applicationContext
                     val tokenStorage = SecureTokenStorage(appContext)
                     val authManager = GitHubAuthManager.getInstance(tokenStorage)
-                    val apiClient = GitHubApiClient.getInstance { authManager.getGitHubToken() }
-                    val gistService = GistService(apiClient.apiService)
-                    val issueService = IssueService(apiClient.apiService)
+                    val gistService = GistService.getInstance(tokenStorage)
+                    val issueService = IssueService.getInstance(tokenStorage, gistService)
 
                     return ReporterViewModel(
                         authManager = authManager,
-                        gistService = gistService,
                         issueService = issueService,
                         context = appContext
                     ) as T

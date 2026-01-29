@@ -45,17 +45,17 @@ object GHReporter {
     private lateinit var applicationContext: Context
     private lateinit var config: GHReporterConfig
 
-    private val timberTree: GHReporterTree by lazy {
+    private val _timberTree: GHReporterTree by lazy {
         checkInitialized()
         GHReporterTree(config.maxTimberLogEntries)
     }
 
-    private val okHttpInterceptor: GHReporterInterceptor by lazy {
+    private val _okHttpInterceptor: GHReporterInterceptor by lazy {
         checkInitialized()
         GHReporterInterceptor(config.maxOkHttpLogEntries)
     }
 
-    private val logcatCollector: LogcatCollector by lazy {
+    private val _logcatCollector: LogcatCollector by lazy {
         checkInitialized()
         LogcatCollector(config.maxLogcatLines)
     }
@@ -87,7 +87,7 @@ object GHReporter {
     @JvmStatic
     fun getTimberTree(): GHReporterTree {
         checkInitialized()
-        return timberTree
+        return _timberTree
     }
 
     /**
@@ -97,7 +97,7 @@ object GHReporter {
     @JvmStatic
     fun getOkHttpInterceptor(): Interceptor {
         checkInitialized()
-        return okHttpInterceptor
+        return _okHttpInterceptor
     }
 
     /**
@@ -175,14 +175,14 @@ object GHReporter {
      * Get collected Timber logs.
      */
     internal fun getTimberLogs(): List<GHReporterTree.LogEntry> {
-        return if (isInitialized) timberTree.getLogs() else emptyList()
+        return if (isInitialized) _timberTree.getLogs() else emptyList()
     }
 
     /**
      * Get collected OkHttp network logs.
      */
     internal fun getNetworkLogs(): List<GHReporterInterceptor.NetworkLogEntry> {
-        return if (isInitialized) okHttpInterceptor.getLogs() else emptyList()
+        return if (isInitialized) _okHttpInterceptor.getLogs() else emptyList()
     }
 
     /**
@@ -190,7 +190,7 @@ object GHReporter {
      */
     internal suspend fun collectLogcat(): String {
         return if (isInitialized && config.enableLogcat) {
-            logcatCollector.collect()
+            _logcatCollector.collect()
         } else {
             ""
         }
@@ -202,8 +202,8 @@ object GHReporter {
     @JvmStatic
     fun clearLogs() {
         if (isInitialized) {
-            timberTree.clear()
-            okHttpInterceptor.clear()
+            _timberTree.clear()
+            _okHttpInterceptor.clear()
         }
     }
 
