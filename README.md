@@ -79,14 +79,31 @@ dependencies {
 
 ### 1. Create a GitHub OAuth App
 
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Click "New OAuth App"
-3. Fill in the details:
-   - **Application name**: Your app name
-   - **Homepage URL**: Your app URL
-   - **Authorization callback URL**: `https://github.com/login/device` (for Device Flow)
-4. Click "Register application"
-5. Copy the **Client ID** (you don't need the client secret for Device Flow)
+The `githubClientId` is a unique identifier for your OAuth application that allows users to authenticate with GitHub. Here's how to get one:
+
+1. Go to [GitHub Developer Settings > OAuth Apps](https://github.com/settings/developers)
+2. Click **"New OAuth App"** (or "Register a new application")
+3. Fill in the required fields:
+
+   | Field | Value | Example |
+   |-------|-------|---------|
+   | **Application name** | Your app's name | `My App Issue Reporter` |
+   | **Homepage URL** | Your app or company website | `https://myapp.com` |
+   | **Application description** | Optional description | `Issue reporting for My App` |
+   | **Authorization callback URL** | Use the Device Flow URL | `https://github.com/login/device` |
+
+4. Click **"Register application"**
+5. On the next page, copy the **Client ID** - it looks like `Iv1.a1b2c3d4e5f6g7h8`
+
+> **Important:** You do NOT need the Client Secret. The SDK uses GitHub's [Device Flow](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps#device-flow) which is designed for apps that can't securely store secrets (like mobile apps).
+
+#### Enable Device Flow (Required)
+
+After creating the OAuth App, you must enable Device Flow:
+
+1. On your OAuth App's settings page, scroll down
+2. Check **"Enable Device Flow"**
+3. Click **"Update application"**
 
 ### 2. Initialize in Application
 
@@ -104,8 +121,8 @@ class MyApp : Application() {
             context = this,
             config = GHReporterConfig(
                 githubOwner = "your-org",           // GitHub username or organization
-                githubRepo = "your-repo",           // Repository name
-                githubClientId = "Iv1.xxxxxxxxxx",  // OAuth App client ID
+                githubRepo = "your-repo",           // Repository name where issues will be created
+                githubClientId = "Iv1.a1b2c3d4e5",  // OAuth App Client ID from step 1
                 defaultLabels = listOf("bug", "from-app"),
                 maxTimberLogEntries = 500,
                 maxOkHttpLogEntries = 50,
