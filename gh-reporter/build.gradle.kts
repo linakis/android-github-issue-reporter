@@ -2,6 +2,48 @@ plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    `maven-publish`
+}
+
+// Publishing configuration for JitPack
+afterEvaluate {
+    publishing {
+        publications {
+            create<MavenPublication>("release") {
+                from(components["release"])
+                
+                groupId = "com.github.linakis"
+                artifactId = "android-github-issue-reporter"
+                version = "1.0.0"
+
+                pom {
+                    name.set("GHReporter")
+                    description.set("Android SDK for reporting GitHub issues with shake-to-report functionality")
+                    url.set("https://github.com/linakis/android-github-issue-reporter")
+                    
+                    licenses {
+                        license {
+                            name.set("MIT License")
+                            url.set("https://opensource.org/licenses/MIT")
+                        }
+                    }
+                    
+                    developers {
+                        developer {
+                            id.set("linakis")
+                            name.set("Nikos Linakis")
+                        }
+                    }
+                    
+                    scm {
+                        connection.set("scm:git:github.com/linakis/android-github-issue-reporter.git")
+                        developerConnection.set("scm:git:ssh://github.com/linakis/android-github-issue-reporter.git")
+                        url.set("https://github.com/linakis/android-github-issue-reporter/tree/main")
+                    }
+                }
+            }
+        }
+    }
 }
 
 android {

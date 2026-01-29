@@ -12,9 +12,58 @@ An Android SDK for reporting GitHub issues with shake-to-report functionality. A
 - **Screenshot Support**: Attach screenshots to reports
 - **Customizable**: Configure labels, log limits, shake sensitivity
 
-## Setup
+## Installation
 
-### 1. Add the dependency
+### Option 1: JitPack (Recommended)
+
+[![](https://jitpack.io/v/linakis/android-github-issue-reporter.svg)](https://jitpack.io/#linakis/android-github-issue-reporter)
+
+**Step 1:** Add JitPack repository to your project's `settings.gradle.kts`:
+
+```kotlin
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
+Or if using the older `build.gradle` (project level):
+
+```groovy
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}
+```
+
+**Step 2:** Add the dependency to your app's `build.gradle.kts`:
+
+```kotlin
+dependencies {
+    implementation("com.github.linakis:android-github-issue-reporter:1.0.0")
+}
+```
+
+Or with Groovy DSL:
+
+```groovy
+dependencies {
+    implementation 'com.github.linakis:android-github-issue-reporter:1.0.0'
+}
+```
+
+> **Note:** Replace `1.0.0` with the latest release version or use `main-SNAPSHOT` for the latest development build.
+
+### Option 2: Local Module
+
+If you prefer to include the SDK as a local module:
 
 ```kotlin
 // settings.gradle.kts
@@ -26,7 +75,9 @@ dependencies {
 }
 ```
 
-### 2. Create a GitHub OAuth App
+## Setup
+
+### 1. Create a GitHub OAuth App
 
 1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
 2. Click "New OAuth App"
@@ -37,7 +88,7 @@ dependencies {
 4. Click "Register application"
 5. Copy the **Client ID** (you don't need the client secret for Device Flow)
 
-### 3. Initialize in Application
+### 2. Initialize in Application
 
 ```kotlin
 class MyApp : Application() {
@@ -74,7 +125,7 @@ class MyApp : Application() {
 }
 ```
 
-### 4. Enable Shake Detection in Activities
+### 3. Enable Shake Detection in Activities
 
 ```kotlin
 class MainActivity : AppCompatActivity() {
@@ -91,7 +142,7 @@ class MainActivity : AppCompatActivity() {
 }
 ```
 
-### 5. Manual Reporting (Optional)
+### 4. Manual Reporting (Optional)
 
 ```kotlin
 // Trigger report manually
