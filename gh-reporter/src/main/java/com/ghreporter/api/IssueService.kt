@@ -164,10 +164,17 @@ class IssueService(
 
         // Screenshots note
         if (screenshotUris.isNotEmpty()) {
-            appendLine("## Screenshots")
+            appendLine("## Screenshot")
             appendLine()
-            if (hasGist) {
-                appendLine("*${screenshotUris.size} screenshot(s) included in the Gist linked below.*")
+            if (hasGist && gistUrl != null) {
+                appendLine("A screenshot is included in the debug logs Gist.")
+                appendLine()
+                appendLine("**To view the screenshot:**")
+                appendLine("1. Open the [Gist]($gistUrl#file-screenshot-html)")
+                appendLine("2. Click on `screenshot.html` in the file list")
+                appendLine("3. Click the **Download** button (download icon in the top-right)")
+                appendLine("4. Open the downloaded HTML file in your web browser")
+                appendLine()
             } else {
                 appendLine("*${screenshotUris.size} screenshot(s) were selected but could not be uploaded.*")
                 appendLine("*Please attach them manually if needed.*")
