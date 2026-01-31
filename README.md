@@ -154,7 +154,8 @@ class MyApp : Application() {
                 defaultLabels = listOf("bug", "from-app"),
                 maxTimberLogEntries = 500,
                 maxOkHttpLogEntries = 50,
-                maxLogcatLines = 500
+                maxLogcatLines = 500,
+                shakeToReport = true
             )
         )
         
@@ -170,21 +171,18 @@ class MyApp : Application() {
 }
 ```
 
-### 3. Enable Shake Detection in Activities
+### 3. Enable Shake-to-Report (Lifecycle-Managed)
 
 ```kotlin
-class MainActivity : AppCompatActivity() {
-    
-    override fun onResume() {
-        super.onResume()
-        GHReporter.enableShakeToReport(this)
-    }
-    
-    override fun onPause() {
-        super.onPause()
-        GHReporter.disableShakeToReport()
-    }
-}
+GHReporter.init(
+    context = this,
+    config = GHReporterConfig(
+        githubOwner = "your-org",
+        githubRepo = "your-repo",
+        githubClientId = "Iv1.a1b2c3d4e5",
+        shakeToReport = true,
+    )
+)
 ```
 
 ### 4. Manual Reporting (Optional)
@@ -208,6 +206,7 @@ button.setOnClickListener {
 | `maxLogcatLines` | Int | 500 | Max logcat lines to capture |
 | `enableLogcat` | Boolean | true | Enable logcat collection |
 | `defaultLabels` | List | [] | Labels applied to all issues |
+| `shakeToReport` | Boolean | false | Enable lifecycle-managed shake-to-report |
 | `shakeThresholdG` | Float | 2.7 | Shake sensitivity (G-force) |
 | `shakeCooldownMs` | Long | 1000 | Cooldown between detections |
 | `includeDeviceInfo` | Boolean | true | Include device info in issue |

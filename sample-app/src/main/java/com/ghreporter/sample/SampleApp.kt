@@ -31,6 +31,7 @@ class SampleApp : Application() {
                 maxTimberLogEntries = 500,
                 maxOkHttpLogEntries = 50,
                 maxLogcatLines = 500,
+                shakeToReport = true,
                 shakeThresholdG = 2.7f,
                 shakeCooldownMs = 1000L,
                 includeDeviceInfo = true,

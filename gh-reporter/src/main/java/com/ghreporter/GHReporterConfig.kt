@@ -11,6 +11,7 @@ package com.ghreporter
  * @property maxLogcatLines Maximum number of logcat lines to capture (default: 500)
  * @property enableLogcat Whether to enable logcat collection (default: true)
  * @property defaultLabels Default labels to apply to created issues
+ * @property shakeToReport Enable lifecycle-managed shake-to-report (default: false)
  * @property shakeThresholdG Shake detection threshold in G-force units (default: 2.7)
  * @property shakeCooldownMs Cooldown between shake detections in milliseconds (default: 1000)
  * @property includeDeviceInfo Whether to include device info in issue body (default: true)
@@ -26,11 +27,12 @@ data class GHReporterConfig(
     val maxLogcatLines: Int = 500,
     val enableLogcat: Boolean = true,
     val defaultLabels: List<String> = emptyList(),
+    val shakeToReport: Boolean = false,
     val shakeThresholdG: Float = 2.7f,
     val shakeCooldownMs: Long = 1000L,
     val includeDeviceInfo: Boolean = true,
     val includeAppInfo: Boolean = true,
-    val screenshotMaxWidth: Int = 480
+    val screenshotMaxWidth: Int = 480,
 ) {
     init {
         require(githubOwner.isNotBlank()) { "githubOwner must not be blank" }
@@ -57,6 +59,7 @@ data class GHReporterConfig(
         private var maxLogcatLines: Int = 500
         private var enableLogcat: Boolean = true
         private var defaultLabels: List<String> = emptyList()
+        private var shakeToReport: Boolean = false
         private var shakeThresholdG: Float = 2.7f
         private var shakeCooldownMs: Long = 1000L
         private var includeDeviceInfo: Boolean = true
@@ -68,6 +71,7 @@ data class GHReporterConfig(
         fun maxLogcatLines(value: Int) = apply { maxLogcatLines = value }
         fun enableLogcat(value: Boolean) = apply { enableLogcat = value }
         fun defaultLabels(value: List<String>) = apply { defaultLabels = value }
+        fun shakeToReport(value: Boolean) = apply { shakeToReport = value }
         fun shakeThresholdG(value: Float) = apply { shakeThresholdG = value }
         fun shakeCooldownMs(value: Long) = apply { shakeCooldownMs = value }
         fun includeDeviceInfo(value: Boolean) = apply { includeDeviceInfo = value }
@@ -83,6 +87,7 @@ data class GHReporterConfig(
             maxLogcatLines = maxLogcatLines,
             enableLogcat = enableLogcat,
             defaultLabels = defaultLabels,
+            shakeToReport = shakeToReport,
             shakeThresholdG = shakeThresholdG,
             shakeCooldownMs = shakeCooldownMs,
             includeDeviceInfo = includeDeviceInfo,

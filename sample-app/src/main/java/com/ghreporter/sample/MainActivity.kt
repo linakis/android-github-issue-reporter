@@ -63,18 +63,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // Enable shake-to-report when activity is visible
-        GHReporter.enableShakeToReport(this)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        // Disable shake detection when activity is not visible
-        GHReporter.disableShakeToReport()
-    }
-
     private fun generateSampleLogs(count: Int) {
         repeat(count) { i ->
             when (i % 5) {

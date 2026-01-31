@@ -4,6 +4,9 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.ghreporter.collectors.GHReporterInterceptor
 import com.ghreporter.collectors.GHReporterTree
 import com.ghreporter.collectors.LogcatCollector
@@ -35,8 +38,16 @@ import java.lang.ref.WeakReference
  *     .addInterceptor(GHReporter.getOkHttpInterceptor())
  *     .build()
  *
- * // Enable shake to report in Activity
- * GHReporter.enableShakeToReport(activity)
+ * // Enable lifecycle-managed shake to report
+ * GHReporter.init(
+ *     context = this,
+ *     config = GHReporterConfig(
+ *         githubOwner = "myorg",
+ *         githubRepo = "my-app",
+ *         githubClientId = "Iv1.xxxxxxxx",
+ *         shakeToReport = true,
+ *     )
+ * )
  * ```
  */
 object GHReporter {
@@ -62,6 +73,7 @@ object GHReporter {
 
     private var shakeDetector: ShakeDetector? = null
     private var currentActivityRef: WeakReference<Activity>? = null
+    private var lifecycleObserver: DefaultLifecycleObserver? = null
 
     /**
      * Initialize the GHReporter SDK. Must be called before using any other methods.
@@ -82,6 +94,10 @@ object GHReporter {
         this.applicationContext = context.applicationContext
         this.config = config
         this.isInitialized = true
+
+        if (config.shakeToReport) {
+            registerLifecycleObserver()
+        }
     }
 
     /**
@@ -260,4 +276,46 @@ object GHReporter {
             "GHReporter is not initialized. Call GHReporter.init() first."
         }
     }
+
+    private fun registerLifecycleObserver() {
+        val application = applicationContext as? Application ?: return
+
+        lifecycleObserver = object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) {
+                val activity = ActivityTracker.getCurrentActivity() ?: return
+                enableShakeToReport(activity)
+            }
+
+            override fun onStop(owner: LifecycleOwner) {
+                disableShakeToReport()
+            }
+        }
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver!!)
+        application.registerActivityLifecycleCallbacks(ActivityTracker)
+    }
+
+    private object ActivityTracker : Application.ActivityLifecycleCallbacks {
+        private var currentActivityRef: WeakReference<Activity>? = null
+
+        fun getCurrentActivity(): Activity? = currentActivityRef?.get()
+
+        override fun onActivityResumed(activity: Activity) {
+            currentActivityRef = WeakReference(activity)
+        }
+
+        override fun onActivityPaused(activity: Activity) {
+            val current = currentActivityRef?.get()
+            if (current == activity) {
+                currentActivityRef = null
+            }
+        }
+
+        override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+        override fun onActivityStarted(activity: Activity) {}
+        override fun onActivityStopped(activity: Activity) {}
+        override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+        override fun onActivityDestroyed(activity: Activity) {}
+    }
+
 }
