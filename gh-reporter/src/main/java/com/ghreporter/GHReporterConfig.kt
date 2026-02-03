@@ -16,6 +16,10 @@ package com.ghreporter
  * @property shakeToReport Enable lifecycle-managed shake-to-report (default: false)
  * @property shakeThresholdG Shake detection threshold in G-force units (default: 2.7)
  * @property shakeCooldownMs Cooldown between shake detections in milliseconds (default: 1000)
+ * @property notificationToReport Show a persistent notification that opens the reporter
+ *   (default: false). Requires POST_NOTIFICATIONS on Android 13+
+ * @property notificationTitle Title for the persistent notification (optional)
+ * @property notificationText Body text for the persistent notification (optional)
  * @property includeDeviceInfo Whether to include device info in issue body (default: true)
  * @property includeAppInfo Whether to include app version info in issue body (default: true)
  * @property screenshotMaxWidth Maximum width in pixels for uploaded screenshots (default: 480)
@@ -32,6 +36,9 @@ data class GHReporterConfig(
     val shakeToReport: Boolean = false,
     val shakeThresholdG: Float = 2.7f,
     val shakeCooldownMs: Long = 1000L,
+    val notificationToReport: Boolean = false,
+    val notificationTitle: String? = null,
+    val notificationText: String? = null,
     val includeDeviceInfo: Boolean = true,
     val includeAppInfo: Boolean = true,
     val screenshotMaxWidth: Int = 480,
@@ -62,6 +69,9 @@ data class GHReporterConfig(
         private var shakeToReport: Boolean = false
         private var shakeThresholdG: Float = 2.7f
         private var shakeCooldownMs: Long = 1000L
+        private var notificationToReport: Boolean = false
+        private var notificationTitle: String? = null
+        private var notificationText: String? = null
         private var includeDeviceInfo: Boolean = true
         private var includeAppInfo: Boolean = true
         private var screenshotMaxWidth: Int = 480
@@ -82,6 +92,12 @@ data class GHReporterConfig(
 
         fun shakeCooldownMs(value: Long) = apply { shakeCooldownMs = value }
 
+        fun notificationToReport(value: Boolean) = apply { notificationToReport = value }
+
+        fun notificationTitle(value: String?) = apply { notificationTitle = value }
+
+        fun notificationText(value: String?) = apply { notificationText = value }
+
         fun includeDeviceInfo(value: Boolean) = apply { includeDeviceInfo = value }
 
         fun includeAppInfo(value: Boolean) = apply { includeAppInfo = value }
@@ -101,6 +117,9 @@ data class GHReporterConfig(
                 shakeToReport = shakeToReport,
                 shakeThresholdG = shakeThresholdG,
                 shakeCooldownMs = shakeCooldownMs,
+                notificationToReport = notificationToReport,
+                notificationTitle = notificationTitle,
+                notificationText = notificationText,
                 includeDeviceInfo = includeDeviceInfo,
                 includeAppInfo = includeAppInfo,
                 screenshotMaxWidth = screenshotMaxWidth

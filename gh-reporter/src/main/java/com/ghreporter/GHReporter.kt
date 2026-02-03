@@ -10,8 +10,8 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import com.ghreporter.collectors.GHReporterInterceptor
 import com.ghreporter.collectors.GHReporterTree
 import com.ghreporter.collectors.LogcatCollector
+import com.ghreporter.notifications.GHReporterNotificationManager
 import com.ghreporter.shake.ShakeDetector
-import com.ghreporter.ui.GHReporterActivity
 import java.lang.ref.WeakReference
 import okhttp3.Interceptor
 
@@ -98,6 +98,13 @@ object GHReporter {
         if (config.shakeToReport) {
             registerLifecycleObserver()
         }
+
+        if (config.notificationToReport) {
+            GHReporterNotificationManager.showPersistentNotification(
+                applicationContext,
+                config
+            )
+        }
     }
 
     /** Validates the SDK configuration. */
@@ -183,6 +190,20 @@ object GHReporter {
         currentActivityRef = null
     }
 
+    /** Show the persistent notification trigger, if enabled. */
+    @JvmStatic
+    fun showReportNotification() {
+        checkInitialized()
+        GHReporterNotificationManager.showPersistentNotification(applicationContext, config)
+    }
+
+    /** Hide the persistent notification trigger. */
+    @JvmStatic
+    fun hideReportNotification() {
+        checkInitialized()
+        GHReporterNotificationManager.cancelPersistentNotification(applicationContext)
+    }
+
     /**
      * Manually trigger the issue reporting UI.
      *
@@ -191,14 +212,15 @@ object GHReporter {
     @JvmStatic
     fun startReporting(context: Context) {
         checkInitialized()
+        context.startActivity(getStartReportingIntent(context))
+    }
 
-        val intent =
-            Intent(context, GHReporterActivity::class.java).apply {
-                if (context !is Activity) {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                }
+    internal fun getStartReportingIntent(context: Context): Intent {
+        return Intent(context, GHReporterActivity::class.java).apply {
+            if (context !is Activity) {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-        context.startActivity(intent)
+        }
     }
 
     /** Get the current SDK configuration. */
@@ -240,6 +262,16 @@ object GHReporter {
             _timberTree.clear()
             _okHttpInterceptor.clear()
         }
+    }
+
+    /** Disable any enabled triggers and notifications. */
+    @JvmStatic
+    fun shutdown() {
+        if (!isInitialized) return
+        disableShakeToReport()
+        GHReporterNotificationManager.cancelPersistentNotification(applicationContext)
+        lifecycleObserver?.let { ProcessLifecycleOwner.get().lifecycle.removeObserver(it) }
+        lifecycleObserver = null
     }
 
     /** Check if the SDK is initialized. */

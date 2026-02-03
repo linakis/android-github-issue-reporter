@@ -17,4 +17,7 @@
     <string name="ghreporter_error">Failed to submit issue</string>
     <string name="ghreporter_add_screenshot">Add screenshot</string>
     <string name="ghreporter_no_screenshots">No screenshots selected</string>
+    <string name="ghreporter_notification_title">GHReporter</string>
+    <string name="ghreporter_notification_text">Tap to report an issue</string>
+    <string name="ghreporter_notification_action">Report</string>
 </resources>
