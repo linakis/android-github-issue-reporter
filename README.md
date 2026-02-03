@@ -5,6 +5,7 @@ An Android SDK for reporting GitHub issues with shake-to-report functionality. A
 ## Features
 
 - **Shake-to-Report**: Shake detection triggers the issue reporter
+- **Notification Trigger**: Persistent notification with a "Report" action
 - **Log Collection**: Captures Timber logs, OkHttp network requests, and Logcat
 - **Private Gists**: Logs are uploaded as private GitHub Gists (linked in issue body)
 - **Screenshot Support**: Attach screenshots to reports (uploaded to Gist)
@@ -155,7 +156,8 @@ class MyApp : Application() {
                 maxTimberLogEntries = 500,
                 maxOkHttpLogEntries = 50,
                 maxLogcatLines = 500,
-                shakeToReport = true
+                shakeToReport = true,
+                notificationToReport = true
             )
         )
         
@@ -180,7 +182,7 @@ GHReporter.init(
         githubOwner = "your-org",
         githubRepo = "your-repo",
         githubClientId = "Iv1.a1b2c3d4e5",
-        shakeToReport = true,
+        shakeToReport = true
     )
 )
 ```
@@ -191,6 +193,36 @@ GHReporter.init(
 // Trigger report manually
 button.setOnClickListener {
     GHReporter.startReporting(context)
+}
+```
+
+### 5. Notification Trigger (Optional)
+
+```kotlin
+GHReporter.init(
+    context = this,
+    config = GHReporterConfig(
+        githubOwner = "your-org",
+        githubRepo = "your-repo",
+        githubClientId = "Iv1.a1b2c3d4e5",
+        notificationToReport = true
+    )
+)
+```
+
+Android 13+ requires `POST_NOTIFICATIONS` permission to show the notification.
+
+Add this to your app manifest:
+
+```xml
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+```
+
+Then request it at runtime on Android 13+:
+
+```kotlin
+if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
 }
 ```
 
@@ -209,6 +241,9 @@ button.setOnClickListener {
 | `shakeToReport` | Boolean | false | Enable lifecycle-managed shake-to-report |
 | `shakeThresholdG` | Float | 2.7 | Shake sensitivity (G-force) |
 | `shakeCooldownMs` | Long | 1000 | Cooldown between detections |
+| `notificationToReport` | Boolean | false | Show a persistent report notification |
+| `notificationTitle` | String? | null | Custom notification title |
+| `notificationText` | String? | null | Custom notification body text |
 | `includeDeviceInfo` | Boolean | true | Include device info in issue |
 | `includeAppInfo` | Boolean | true | Include app version in issue |
 | `screenshotMaxWidth` | Int | 480 | Max width for uploaded screenshots (px) |

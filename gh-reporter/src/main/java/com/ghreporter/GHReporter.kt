@@ -12,6 +12,7 @@ import com.ghreporter.collectors.GHReporterTree
 import com.ghreporter.collectors.LogcatCollector
 import com.ghreporter.notifications.GHReporterNotificationManager
 import com.ghreporter.shake.ShakeDetector
+import com.ghreporter.ui.GHReporterActivity
 import java.lang.ref.WeakReference
 import okhttp3.Interceptor
 
