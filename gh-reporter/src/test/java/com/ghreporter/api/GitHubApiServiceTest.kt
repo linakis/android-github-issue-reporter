@@ -5,6 +5,7 @@ import com.ghreporter.api.models.CreateIssueRequest
 import com.ghreporter.api.models.GistFile
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.mockwebserver.MockResponse
@@ -15,33 +16,32 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import java.util.concurrent.TimeUnit
 
 class GitHubApiServiceTest {
 
     private lateinit var mockWebServer: MockWebServer
     private lateinit var apiService: GitHubApiService
 
-    private val moshi: Moshi = Moshi.Builder()
-        .addLast(KotlinJsonAdapterFactory())
-        .build()
+    private val moshi: Moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
 
     @Before
     fun setup() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
 
-        val okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(1, TimeUnit.SECONDS)
-            .readTimeout(1, TimeUnit.SECONDS)
-            .writeTimeout(1, TimeUnit.SECONDS)
-            .build()
+        val okHttpClient =
+            OkHttpClient.Builder()
+                .connectTimeout(1, TimeUnit.SECONDS)
+                .readTimeout(1, TimeUnit.SECONDS)
+                .writeTimeout(1, TimeUnit.SECONDS)
+                .build()
 
-        val retrofit = Retrofit.Builder()
-            .baseUrl(mockWebServer.url("/"))
-            .client(okHttpClient)
-            .addConverterFactory(MoshiConverterFactory.create(moshi))
-            .build()
+        val retrofit =
+            Retrofit.Builder()
+                .baseUrl(mockWebServer.url("/"))
+                .client(okHttpClient)
+                .addConverterFactory(MoshiConverterFactory.create(moshi))
+                .build()
 
         apiService = retrofit.create(GitHubApiService::class.java)
     }
@@ -54,7 +54,8 @@ class GitHubApiServiceTest {
     @Test
     fun `getAuthenticatedUser parses response correctly`() = runBlocking {
         // Given
-        val jsonResponse = """
+        val jsonResponse =
+            """
             {
                 "id": 12345,
                 "login": "testuser",
@@ -63,8 +64,9 @@ class GitHubApiServiceTest {
                 "name": "Test User",
                 "email": "test@example.com"
             }
-        """.trimIndent()
-        
+        """
+                .trimIndent()
+
         mockWebServer.enqueue(MockResponse().setBody(jsonResponse).setResponseCode(200))
 
         // When
@@ -81,7 +83,8 @@ class GitHubApiServiceTest {
     @Test
     fun `createGist sends correct request`() = runBlocking {
         // Given
-        val jsonResponse = """
+        val jsonResponse =
+            """
             {
                 "id": "abc123",
                 "html_url": "https://gist.github.com/abc123",
@@ -105,15 +108,17 @@ class GitHubApiServiceTest {
                     "html_url": "https://github.com/testuser"
                 }
             }
-        """.trimIndent()
+        """
+                .trimIndent()
 
         mockWebServer.enqueue(MockResponse().setBody(jsonResponse).setResponseCode(201))
 
-        val request = CreateGistRequest(
-            description = "Test gist",
-            public = false,
-            files = mapOf("test.txt" to GistFile("Test content"))
-        )
+        val request =
+            CreateGistRequest(
+                description = "Test gist",
+                public = false,
+                files = mapOf("test.txt" to GistFile("Test content"))
+            )
 
         // When
         val response = apiService.createGist(request)
@@ -135,7 +140,8 @@ class GitHubApiServiceTest {
     @Test
     fun `createIssue sends correct request`() = runBlocking {
         // Given
-        val jsonResponse = """
+        val jsonResponse =
+            """
             {
                 "id": 1,
                 "number": 42,
@@ -160,15 +166,17 @@ class GitHubApiServiceTest {
                 "created_at": "2024-01-01T00:00:00Z",
                 "updated_at": "2024-01-01T00:00:00Z"
             }
-        """.trimIndent()
+        """
+                .trimIndent()
 
         mockWebServer.enqueue(MockResponse().setBody(jsonResponse).setResponseCode(201))
 
-        val request = CreateIssueRequest(
-            title = "Bug report",
-            body = "Something is broken",
-            labels = listOf("bug")
-        )
+        val request =
+            CreateIssueRequest(
+                title = "Bug report",
+                body = "Something is broken",
+                labels = listOf("bug")
+            )
 
         // When
         val response = apiService.createIssue("owner", "repo", request)
@@ -189,7 +197,8 @@ class GitHubApiServiceTest {
     @Test
     fun `checkRepositoryAccess returns success for accessible repo`() = runBlocking {
         // Given
-        val jsonResponse = """
+        val jsonResponse =
+            """
             {
                 "id": 1,
                 "name": "repo",
@@ -204,7 +213,8 @@ class GitHubApiServiceTest {
                     "html_url": "https://github.com/owner"
                 }
             }
-        """.trimIndent()
+        """
+                .trimIndent()
 
         mockWebServer.enqueue(MockResponse().setBody(jsonResponse).setResponseCode(200))
 
@@ -220,7 +230,9 @@ class GitHubApiServiceTest {
     @Test
     fun `API returns 401 for unauthorized request`() = runBlocking {
         // Given
-        mockWebServer.enqueue(MockResponse().setResponseCode(401).setBody("""{"message":"Bad credentials"}"""))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(401).setBody("""{"message":"Bad credentials"}""")
+        )
 
         // When
         val response = apiService.getAuthenticatedUser()
@@ -233,7 +245,9 @@ class GitHubApiServiceTest {
     @Test
     fun `API returns 404 for non-existent resource`() = runBlocking {
         // Given
-        mockWebServer.enqueue(MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}"""))
+        mockWebServer.enqueue(
+            MockResponse().setResponseCode(404).setBody("""{"message":"Not Found"}""")
+        )
 
         // When
         val response = apiService.checkRepositoryAccess("nonexistent", "repo")

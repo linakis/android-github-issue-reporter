@@ -56,15 +56,16 @@ class ImageUtilsTest {
     @Test
     fun `ProcessedImage data class holds correct values`() {
         // Given/When
-        val processed = ImageUtils.ProcessedImage(
-            base64 = "test-base64",
-            mimeType = "image/jpeg",
-            originalWidth = 1080,
-            originalHeight = 1920,
-            resizedWidth = 480,
-            resizedHeight = 853,
-            sizeBytes = 12345
-        )
+        val processed =
+            ImageUtils.ProcessedImage(
+                base64 = "test-base64",
+                mimeType = "image/jpeg",
+                originalWidth = 1080,
+                originalHeight = 1920,
+                resizedWidth = 480,
+                resizedHeight = 853,
+                sizeBytes = 12345
+            )
 
         // Then
         assertEquals("test-base64", processed.base64)

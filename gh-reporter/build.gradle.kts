@@ -18,7 +18,9 @@ afterEvaluate {
 
                 pom {
                     name.set("GHReporter")
-                    description.set("Android SDK for reporting GitHub issues with shake-to-report functionality")
+                    description.set(
+                        "Android SDK for reporting GitHub issues with shake-to-report functionality"
+                    )
                     url.set("https://github.com/linakis/android-github-issue-reporter")
 
                     licenses {
@@ -36,9 +38,15 @@ afterEvaluate {
                     }
 
                     scm {
-                        connection.set("scm:git:github.com/linakis/android-github-issue-reporter.git")
-                        developerConnection.set("scm:git:ssh://github.com/linakis/android-github-issue-reporter.git")
-                        url.set("https://github.com/linakis/android-github-issue-reporter/tree/main")
+                        connection.set(
+                            "scm:git:github.com/linakis/android-github-issue-reporter.git"
+                        )
+                        developerConnection.set(
+                            "scm:git:ssh://github.com/linakis/android-github-issue-reporter.git"
+                        )
+                        url.set(
+                            "https://github.com/linakis/android-github-issue-reporter/tree/main"
+                        )
                     }
                 }
             }
@@ -72,17 +80,11 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
+    kotlinOptions { jvmTarget = "17" }
 
-    buildFeatures {
-        compose = true
-    }
+    buildFeatures { compose = true }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.4"
-    }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.4" }
 }
 
 dependencies {

@@ -12,17 +12,17 @@ import androidx.security.crypto.MasterKey
  */
 class SecureTokenStorage(context: Context) {
 
-    private val masterKey: MasterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val masterKey: MasterKey =
+        MasterKey.Builder(context).setKeyScheme(MasterKey.KeyScheme.AES256_GCM).build()
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        PREFS_FILE_NAME,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    private val sharedPreferences: SharedPreferences =
+        EncryptedSharedPreferences.create(
+            context,
+            PREFS_FILE_NAME,
+            masterKey,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
 
     /**
      * Store the GitHub access token securely.
@@ -30,7 +30,8 @@ class SecureTokenStorage(context: Context) {
      * @param token The access token to store
      */
     fun saveGitHubToken(token: String) {
-        sharedPreferences.edit()
+        sharedPreferences
+            .edit()
             .putString(KEY_GITHUB_TOKEN, token)
             .putLong(KEY_TOKEN_SAVED_AT, System.currentTimeMillis())
             .apply()
@@ -69,9 +70,7 @@ class SecureTokenStorage(context: Context) {
      * @param username The GitHub username
      */
     fun saveGitHubUsername(username: String) {
-        sharedPreferences.edit()
-            .putString(KEY_GITHUB_USERNAME, username)
-            .apply()
+        sharedPreferences.edit().putString(KEY_GITHUB_USERNAME, username).apply()
     }
 
     /**
@@ -89,9 +88,7 @@ class SecureTokenStorage(context: Context) {
      * @param email The user's email
      */
     fun saveUserEmail(email: String) {
-        sharedPreferences.edit()
-            .putString(KEY_USER_EMAIL, email)
-            .apply()
+        sharedPreferences.edit().putString(KEY_USER_EMAIL, email).apply()
     }
 
     /**
@@ -109,9 +106,7 @@ class SecureTokenStorage(context: Context) {
      * @param avatarUrl The avatar URL
      */
     fun saveAvatarUrl(avatarUrl: String) {
-        sharedPreferences.edit()
-            .putString(KEY_AVATAR_URL, avatarUrl)
-            .apply()
+        sharedPreferences.edit().putString(KEY_AVATAR_URL, avatarUrl).apply()
     }
 
     /**
@@ -123,11 +118,10 @@ class SecureTokenStorage(context: Context) {
         return sharedPreferences.getString(KEY_AVATAR_URL, null)
     }
 
-    /**
-     * Clear the GitHub token and all user data.
-     */
+    /** Clear the GitHub token and all user data. */
     fun clearGitHubToken() {
-        sharedPreferences.edit()
+        sharedPreferences
+            .edit()
             .remove(KEY_GITHUB_TOKEN)
             .remove(KEY_TOKEN_SAVED_AT)
             .remove(KEY_GITHUB_USERNAME)
@@ -136,18 +130,12 @@ class SecureTokenStorage(context: Context) {
             .apply()
     }
 
-    /**
-     * Clear all stored data.
-     */
+    /** Clear all stored data. */
     fun clearAll() {
-        sharedPreferences.edit()
-            .clear()
-            .apply()
+        sharedPreferences.edit().clear().apply()
     }
 
-    /**
-     * Get stored user info as a data class.
-     */
+    /** Get stored user info as a data class. */
     fun getUserInfo(): UserInfo? {
         val token = getGitHubToken() ?: return null
         return UserInfo(
@@ -159,13 +147,13 @@ class SecureTokenStorage(context: Context) {
         )
     }
 
-    /**
-     * Save user info from a data class.
-     */
+    /** Save user info from a data class. */
     fun saveUserInfo(userInfo: UserInfo) {
-        val editor = sharedPreferences.edit()
-            .putString(KEY_GITHUB_TOKEN, userInfo.token)
-            .putLong(KEY_TOKEN_SAVED_AT, System.currentTimeMillis())
+        val editor =
+            sharedPreferences
+                .edit()
+                .putString(KEY_GITHUB_TOKEN, userInfo.token)
+                .putLong(KEY_TOKEN_SAVED_AT, System.currentTimeMillis())
 
         userInfo.username?.let { editor.putString(KEY_GITHUB_USERNAME, it) }
         userInfo.email?.let { editor.putString(KEY_USER_EMAIL, it) }
@@ -174,9 +162,7 @@ class SecureTokenStorage(context: Context) {
         editor.apply()
     }
 
-    /**
-     * Data class representing stored user information.
-     */
+    /** Data class representing stored user information. */
     data class UserInfo(
         val token: String,
         val username: String?,
@@ -193,18 +179,15 @@ class SecureTokenStorage(context: Context) {
         private const val KEY_USER_EMAIL = "user_email"
         private const val KEY_AVATAR_URL = "avatar_url"
 
-        @Volatile
-        private var instance: SecureTokenStorage? = null
+        @Volatile private var instance: SecureTokenStorage? = null
 
-        /**
-         * Get singleton instance.
-         */
+        /** Get singleton instance. */
         fun getInstance(context: Context): SecureTokenStorage {
-            return instance ?: synchronized(this) {
-                instance ?: SecureTokenStorage(context.applicationContext).also {
-                    instance = it
+            return instance
+                ?: synchronized(this) {
+                    instance
+                        ?: SecureTokenStorage(context.applicationContext).also { instance = it }
                 }
-            }
         }
     }
 }

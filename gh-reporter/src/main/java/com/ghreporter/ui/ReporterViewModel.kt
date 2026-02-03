@@ -19,9 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for the GHReporter issue submission flow.
- */
+/** ViewModel for the GHReporter issue submission flow. */
 class ReporterViewModel(
     private val authManager: GitHubAuthManager,
     private val issueService: IssueService,
@@ -104,19 +102,11 @@ class ReporterViewModel(
                         }
                     }
                     is GitHubAuthManager.AuthState.Loading -> {
-                        _uiState.update {
-                            it.copy(
-                                isAuthLoading = true,
-                                authError = null
-                            )
-                        }
+                        _uiState.update { it.copy(isAuthLoading = true, authError = null) }
                     }
                     is GitHubAuthManager.AuthState.Error -> {
                         _uiState.update {
-                            it.copy(
-                                isAuthLoading = false,
-                                authError = authState.message
-                            )
+                            it.copy(isAuthLoading = false, authError = authState.message)
                         }
                     }
                     GitHubAuthManager.AuthState.NotAuthenticated -> {
@@ -145,9 +135,7 @@ class ReporterViewModel(
     }
 
     fun signIn() {
-        viewModelScope.launch {
-            authManager.signInWithGitHub()
-        }
+        viewModelScope.launch { authManager.signInWithGitHub() }
     }
 
     fun signOut() {
@@ -164,11 +152,12 @@ class ReporterViewModel(
 
     fun toggleLabel(label: String) {
         _uiState.update { state ->
-            val newLabels = if (label in state.selectedLabels) {
-                state.selectedLabels - label
-            } else {
-                state.selectedLabels + label
-            }
+            val newLabels =
+                if (label in state.selectedLabels) {
+                    state.selectedLabels - label
+                } else {
+                    state.selectedLabels + label
+                }
             state.copy(selectedLabels = newLabels)
         }
     }
@@ -210,33 +199,36 @@ class ReporterViewModel(
 
             try {
                 // Process screenshot if included
-                val screenshotUris = if (state.includeScreenshot && state.screenshotUri != null) {
-                    listOf(state.screenshotUri)
-                } else {
-                    emptyList()
-                }
+                val screenshotUris =
+                    if (state.includeScreenshot && state.screenshotUri != null) {
+                        listOf(state.screenshotUri)
+                    } else {
+                        emptyList()
+                    }
 
                 // Build issue options
-                val options = IssueService.IssueOptions(
-                    title = state.title,
-                    description = state.body,
-                    includeTimberLogs = state.includeTimberLogs,
-                    includeOkHttpLogs = state.includeNetworkLogs,
-                    includeLogcat = state.includeLogcat,
-                    includeDeviceInfo = state.includeDeviceInfo,
-                    includeAppInfo = state.includeDeviceInfo,
-                    screenshotUris = screenshotUris,
-                    additionalLabels = state.selectedLabels.toList()
-                )
+                val options =
+                    IssueService.IssueOptions(
+                        title = state.title,
+                        description = state.body,
+                        includeTimberLogs = state.includeTimberLogs,
+                        includeOkHttpLogs = state.includeNetworkLogs,
+                        includeLogcat = state.includeLogcat,
+                        includeDeviceInfo = state.includeDeviceInfo,
+                        includeAppInfo = state.includeDeviceInfo,
+                        screenshotUris = screenshotUris,
+                        additionalLabels = state.selectedLabels.toList()
+                    )
 
                 // Create issue using IssueService
                 val config = GHReporter.getConfig()
-                val result = issueService.createIssue(
-                    context = context,
-                    owner = config.githubOwner,
-                    repo = config.githubRepo,
-                    options = options
-                )
+                val result =
+                    issueService.createIssue(
+                        context = context,
+                        owner = config.githubOwner,
+                        repo = config.githubRepo,
+                        options = options
+                    )
 
                 when (result) {
                     is IssueService.IssueResult.Success -> {
@@ -245,10 +237,7 @@ class ReporterViewModel(
                     }
                     is IssueService.IssueResult.Error -> {
                         _uiState.update {
-                            it.copy(
-                                isSubmitting = false,
-                                submissionError = result.message
-                            )
+                            it.copy(isSubmitting = false, submissionError = result.message)
                         }
                     }
                 }
@@ -278,7 +267,8 @@ class ReporterViewModel(
                         authManager = authManager,
                         issueService = issueService,
                         context = appContext
-                    ) as T
+                    )
+                        as T
                 }
             }
         }

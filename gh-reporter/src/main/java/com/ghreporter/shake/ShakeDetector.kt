@@ -10,8 +10,8 @@ import kotlin.math.sqrt
 /**
  * Detects device shake gestures using the accelerometer.
  *
- * Uses a simple algorithm based on acceleration magnitude exceeding a threshold.
- * Includes debounce logic to prevent multiple triggers.
+ * Uses a simple algorithm based on acceleration magnitude exceeding a threshold. Includes debounce
+ * logic to prevent multiple triggers.
  *
  * @param context Android context for accessing sensor service
  * @param thresholdG Shake threshold in G-force units (default: 2.7G)
@@ -28,8 +28,7 @@ class ShakeDetector(
     private val sensorManager: SensorManager =
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-    private val accelerometer: Sensor? =
-        sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+    private val accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     private var lastShakeTime: Long = 0
     private var isRegistered: Boolean = false
@@ -51,18 +50,17 @@ class ShakeDetector(
         if (accelerometer == null) return false
 
         isFirstReading = true
-        isRegistered = sensorManager.registerListener(
-            this,
-            accelerometer,
-            SensorManager.SENSOR_DELAY_UI // ~60ms updates
-        )
+        isRegistered =
+            sensorManager.registerListener(
+                this,
+                accelerometer,
+                SensorManager.SENSOR_DELAY_UI // ~60ms updates
+            )
 
         return isRegistered
     }
 
-    /**
-     * Stop listening for shake gestures.
-     */
+    /** Stop listening for shake gestures. */
     fun stop() {
         if (isRegistered) {
             sensorManager.unregisterListener(this)
@@ -70,9 +68,7 @@ class ShakeDetector(
         }
     }
 
-    /**
-     * Check if the detector is currently active.
-     */
+    /** Check if the detector is currently active. */
     fun isActive(): Boolean = isRegistered
 
     override fun onSensorChanged(event: SensorEvent) {
@@ -111,9 +107,8 @@ class ShakeDetector(
 
         // Calculate acceleration magnitude (in G)
         // Divide by standard gravity (9.81 m/s²) to convert to G-force
-        val accelerationMagnitude = sqrt(
-            deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ
-        ) / SensorManager.GRAVITY_EARTH
+        val accelerationMagnitude =
+            sqrt(deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ) / SensorManager.GRAVITY_EARTH
 
         // Check if exceeds threshold
         if (accelerationMagnitude > thresholdG) {
@@ -129,26 +124,20 @@ class ShakeDetector(
         // Not needed for shake detection
     }
 
-    /**
-     * Check if the device has an accelerometer.
-     */
+    /** Check if the device has an accelerometer. */
     fun hasAccelerometer(): Boolean = accelerometer != null
 
     companion object {
         /**
-         * Default shake threshold in G-force.
-         * A value of 2.7G works well for intentional shakes while avoiding false positives.
+         * Default shake threshold in G-force. A value of 2.7G works well for intentional shakes
+         * while avoiding false positives.
          */
         const val DEFAULT_THRESHOLD_G = 2.7f
 
-        /**
-         * Default cooldown between shake detections.
-         */
+        /** Default cooldown between shake detections. */
         const val DEFAULT_COOLDOWN_MS = 1000L
 
-        /**
-         * Check if a device has an accelerometer without creating a detector instance.
-         */
+        /** Check if a device has an accelerometer without creating a detector instance. */
         fun isShakeDetectionSupported(context: Context): Boolean {
             val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
             return sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null

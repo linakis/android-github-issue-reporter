@@ -4,16 +4,11 @@ import com.ghreporter.api.models.*
 import retrofit2.Response
 import retrofit2.http.*
 
-/**
- * Retrofit interface for GitHub REST API.
- */
+/** Retrofit interface for GitHub REST API. */
 interface GitHubApiService {
 
-    /**
-     * Get the authenticated user's information.
-     */
-    @GET("user")
-    suspend fun getAuthenticatedUser(): Response<GitHubUser>
+    /** Get the authenticated user's information. */
+    @GET("user") suspend fun getAuthenticatedUser(): Response<GitHubUser>
 
     /**
      * Create a new issue in a repository.
@@ -66,10 +61,7 @@ interface GitHubApiService {
      *
      * @param request Gist creation request body
      */
-    @POST("gists")
-    suspend fun createGist(
-        @Body request: CreateGistRequest
-    ): Response<GistResponse>
+    @POST("gists") suspend fun createGist(@Body request: CreateGistRequest): Response<GistResponse>
 
     /**
      * Get repository information.
@@ -84,8 +76,7 @@ interface GitHubApiService {
     ): Response<Repository>
 
     /**
-     * Check if the authenticated user has access to a repository.
-     * Returns 404 if no access.
+     * Check if the authenticated user has access to a repository. Returns 404 if no access.
      *
      * @param owner Repository owner
      * @param repo Repository name

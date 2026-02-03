@@ -12,8 +12,8 @@ import com.ghreporter.collectors.GHReporterTree
 import com.ghreporter.collectors.LogcatCollector
 import com.ghreporter.shake.ShakeDetector
 import com.ghreporter.ui.GHReporterActivity
-import okhttp3.Interceptor
 import java.lang.ref.WeakReference
+import okhttp3.Interceptor
 
 /**
  * Main entry point for GHReporter SDK.
@@ -100,47 +100,39 @@ object GHReporter {
         }
     }
 
-    /**
-     * Validates the SDK configuration.
-     */
+    /** Validates the SDK configuration. */
     private fun validateConfig(config: GHReporterConfig) {
-        require(config.githubOwner.isNotBlank()) {
-            "githubOwner cannot be empty"
-        }
-        require(config.githubRepo.isNotBlank()) {
-            "githubRepo cannot be empty"
-        }
-        require(config.githubClientId.isNotBlank()) {
-            "githubClientId cannot be empty"
-        }
-        
+        require(config.githubOwner.isNotBlank()) { "githubOwner cannot be empty" }
+        require(config.githubRepo.isNotBlank()) { "githubRepo cannot be empty" }
+        require(config.githubClientId.isNotBlank()) { "githubClientId cannot be empty" }
+
         // Check for placeholder values
         if (config.githubOwner in listOf("your-org", "your-username", "REPLACE_ME")) {
             throw IllegalArgumentException(
                 "GitHub owner is still set to placeholder value: '${config.githubOwner}'. " +
-                "Please update with your actual GitHub username or organization."
+                    "Please update with your actual GitHub username or organization."
             )
         }
         if (config.githubRepo in listOf("your-repo", "REPLACE_ME")) {
             throw IllegalArgumentException(
                 "GitHub repo is still set to placeholder value: '${config.githubRepo}'. " +
-                "Please update with your actual repository name."
+                    "Please update with your actual repository name."
             )
         }
         if (config.githubClientId.startsWith("Iv1.x") || config.githubClientId == "REPLACE_ME") {
             throw IllegalArgumentException(
                 "GitHub Client ID is still set to placeholder value. " +
-                "To fix this:\n" +
-                "1. Go to https://github.com/settings/developers\n" +
-                "2. Create a new OAuth App with Device Flow enabled\n" +
-                "3. Copy the Client ID and update your GHReporterConfig"
+                    "To fix this:\n" +
+                    "1. Go to https://github.com/settings/developers\n" +
+                    "2. Create a new OAuth App with Device Flow enabled\n" +
+                    "3. Copy the Client ID and update your GHReporterConfig"
             )
         }
     }
 
     /**
-     * Returns the Timber tree for log collection.
-     * Plant this tree to capture logs: `Timber.plant(GHReporter.getTimberTree())`
+     * Returns the Timber tree for log collection. Plant this tree to capture logs:
+     * `Timber.plant(GHReporter.getTimberTree())`
      */
     @JvmStatic
     fun getTimberTree(): GHReporterTree {
@@ -149,8 +141,8 @@ object GHReporter {
     }
 
     /**
-     * Returns the OkHttp interceptor for network log collection.
-     * Add to your OkHttpClient: `.addInterceptor(GHReporter.getOkHttpInterceptor())`
+     * Returns the OkHttp interceptor for network log collection. Add to your OkHttpClient:
+     * `.addInterceptor(GHReporter.getOkHttpInterceptor())`
      */
     @JvmStatic
     fun getOkHttpInterceptor(): Interceptor {
@@ -159,8 +151,8 @@ object GHReporter {
     }
 
     /**
-     * Enable shake-to-report functionality for the given activity.
-     * Call this in onResume() and call disableShakeToReport() in onPause().
+     * Enable shake-to-report functionality for the given activity. Call this in onResume() and call
+     * disableShakeToReport() in onPause().
      *
      * @param activity The activity to enable shake detection for
      */
@@ -171,24 +163,20 @@ object GHReporter {
         currentActivityRef = WeakReference(activity)
 
         if (shakeDetector == null) {
-            shakeDetector = ShakeDetector(
-                context = activity,
-                thresholdG = config.shakeThresholdG,
-                cooldownMs = config.shakeCooldownMs
-            ) {
-                currentActivityRef?.get()?.let { act ->
-                    startReporting(act)
+            shakeDetector =
+                ShakeDetector(
+                    context = activity,
+                    thresholdG = config.shakeThresholdG,
+                    cooldownMs = config.shakeCooldownMs
+                ) {
+                    currentActivityRef?.get()?.let { act -> startReporting(act) }
                 }
-            }
         }
 
         shakeDetector?.start()
     }
 
-    /**
-     * Disable shake-to-report functionality.
-     * Call this in onPause().
-     */
+    /** Disable shake-to-report functionality. Call this in onPause(). */
     @JvmStatic
     fun disableShakeToReport() {
         shakeDetector?.stop()
@@ -204,48 +192,39 @@ object GHReporter {
     fun startReporting(context: Context) {
         checkInitialized()
 
-        val intent = Intent(context, GHReporterActivity::class.java).apply {
-            if (context !is Activity) {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val intent =
+            Intent(context, GHReporterActivity::class.java).apply {
+                if (context !is Activity) {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
             }
-        }
         context.startActivity(intent)
     }
 
-    /**
-     * Get the current SDK configuration.
-     */
+    /** Get the current SDK configuration. */
     @JvmStatic
     fun getConfig(): GHReporterConfig {
         checkInitialized()
         return config
     }
 
-    /**
-     * Get the application context.
-     */
+    /** Get the application context. */
     internal fun getApplicationContext(): Context {
         checkInitialized()
         return applicationContext
     }
 
-    /**
-     * Get collected Timber logs.
-     */
+    /** Get collected Timber logs. */
     internal fun getTimberLogs(): List<GHReporterTree.LogEntry> {
         return if (isInitialized) _timberTree.getLogs() else emptyList()
     }
 
-    /**
-     * Get collected OkHttp network logs.
-     */
+    /** Get collected OkHttp network logs. */
     internal fun getNetworkLogs(): List<GHReporterInterceptor.NetworkLogEntry> {
         return if (isInitialized) _okHttpInterceptor.getLogs() else emptyList()
     }
 
-    /**
-     * Collect logcat logs.
-     */
+    /** Collect logcat logs. */
     internal suspend fun collectLogcat(): String {
         return if (isInitialized && config.enableLogcat) {
             _logcatCollector.collect()
@@ -254,9 +233,7 @@ object GHReporter {
         }
     }
 
-    /**
-     * Clear all collected logs.
-     */
+    /** Clear all collected logs. */
     @JvmStatic
     fun clearLogs() {
         if (isInitialized) {
@@ -265,31 +242,27 @@ object GHReporter {
         }
     }
 
-    /**
-     * Check if the SDK is initialized.
-     */
-    @JvmStatic
-    fun isInitialized(): Boolean = isInitialized
+    /** Check if the SDK is initialized. */
+    @JvmStatic fun isInitialized(): Boolean = isInitialized
 
     private fun checkInitialized() {
-        check(isInitialized) {
-            "GHReporter is not initialized. Call GHReporter.init() first."
-        }
+        check(isInitialized) { "GHReporter is not initialized. Call GHReporter.init() first." }
     }
 
     private fun registerLifecycleObserver() {
         val application = applicationContext as? Application ?: return
 
-        lifecycleObserver = object : DefaultLifecycleObserver {
-            override fun onStart(owner: LifecycleOwner) {
-                val activity = ActivityTracker.getCurrentActivity() ?: return
-                enableShakeToReport(activity)
-            }
+        lifecycleObserver =
+            object : DefaultLifecycleObserver {
+                override fun onStart(owner: LifecycleOwner) {
+                    val activity = ActivityTracker.getCurrentActivity() ?: return
+                    enableShakeToReport(activity)
+                }
 
-            override fun onStop(owner: LifecycleOwner) {
-                disableShakeToReport()
+                override fun onStop(owner: LifecycleOwner) {
+                    disableShakeToReport()
+                }
             }
-        }
 
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver!!)
         application.registerActivityLifecycleCallbacks(ActivityTracker)
@@ -311,11 +284,17 @@ object GHReporter {
             }
         }
 
-        override fun onActivityCreated(activity: Activity, savedInstanceState: android.os.Bundle?) {}
+        override fun onActivityCreated(
+            activity: Activity,
+            savedInstanceState: android.os.Bundle?
+        ) {}
+
         override fun onActivityStarted(activity: Activity) {}
+
         override fun onActivityStopped(activity: Activity) {}
+
         override fun onActivitySaveInstanceState(activity: Activity, outState: android.os.Bundle) {}
+
         override fun onActivityDestroyed(activity: Activity) {}
     }
-
 }

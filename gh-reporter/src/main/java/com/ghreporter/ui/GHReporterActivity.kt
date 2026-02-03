@@ -2,6 +2,7 @@ package com.ghreporter.ui
 
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -14,10 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
-import android.widget.Toast
 import com.ghreporter.ui.components.AuthDialog
 import com.ghreporter.ui.screens.IssueFormScreen
 import com.ghreporter.ui.theme.GHReporterTheme
@@ -37,20 +37,15 @@ class GHReporterActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        setContent {
-            GHReporterTheme {
-                GHReporterScreen(
-                    onDismiss = { finish() }
-                )
-            }
-        }
+        setContent { GHReporterTheme { GHReporterScreen(onDismiss = { finish() }) } }
     }
 }
 
 @Composable
 fun GHReporterScreen(
     onDismiss: () -> Unit,
-    viewModel: ReporterViewModel = viewModel(factory = ReporterViewModel.factory(LocalContext.current))
+    viewModel: ReporterViewModel =
+        viewModel(factory = ReporterViewModel.factory(LocalContext.current))
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -78,11 +73,11 @@ fun GHReporterScreen(
     }
 
     // Photo picker launcher
-    val photoPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri: Uri? ->
-        viewModel.setScreenshotUri(uri)
-    }
+    val photoPickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.PickVisualMedia()) {
+            uri: Uri? ->
+            viewModel.setScreenshotUri(uri)
+        }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Always show the issue form

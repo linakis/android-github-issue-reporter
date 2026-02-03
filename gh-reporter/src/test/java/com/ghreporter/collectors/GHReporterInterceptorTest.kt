@@ -19,11 +19,9 @@ class GHReporterInterceptorTest {
     fun setup() {
         mockWebServer = MockWebServer()
         mockWebServer.start()
-        
+
         interceptor = GHReporterInterceptor(maxEntries = 10)
-        client = OkHttpClient.Builder()
-            .addInterceptor(interceptor)
-            .build()
+        client = OkHttpClient.Builder().addInterceptor(interceptor).build()
     }
 
     @After
@@ -35,9 +33,7 @@ class GHReporterInterceptorTest {
     fun `intercept captures successful request`() {
         // Given
         mockWebServer.enqueue(MockResponse().setBody("""{"status":"ok"}""").setResponseCode(200))
-        val request = Request.Builder()
-            .url(mockWebServer.url("/api/test"))
-            .build()
+        val request = Request.Builder().url(mockWebServer.url("/api/test")).build()
 
         // When
         val response = client.newCall(request).execute()
@@ -45,7 +41,7 @@ class GHReporterInterceptorTest {
         // Then
         assertEquals(200, response.code)
         assertEquals(1, interceptor.size())
-        
+
         val log = interceptor.getLogs().first()
         assertEquals("GET", log.method)
         assertTrue(log.url.endsWith("/api/test"))
@@ -58,9 +54,7 @@ class GHReporterInterceptorTest {
     fun `intercept captures failed request`() {
         // Given
         mockWebServer.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
-        val request = Request.Builder()
-            .url(mockWebServer.url("/api/missing"))
-            .build()
+        val request = Request.Builder().url(mockWebServer.url("/api/missing")).build()
 
         // When
         val response = client.newCall(request).execute()
@@ -68,7 +62,7 @@ class GHReporterInterceptorTest {
         // Then
         assertEquals(404, response.code)
         assertEquals(1, interceptor.size())
-        
+
         val log = interceptor.getLogs().first()
         assertEquals(404, log.responseCode)
         assertFalse(log.isSuccess)
@@ -83,15 +77,13 @@ class GHReporterInterceptorTest {
 
         // When - make 15 requests
         repeat(15) {
-            val request = Request.Builder()
-                .url(mockWebServer.url("/api/request$it"))
-                .build()
+            val request = Request.Builder().url(mockWebServer.url("/api/request$it")).build()
             client.newCall(request).execute()
         }
 
         // Then - should only have 10 entries (maxEntries)
         assertEquals(10, interceptor.size())
-        
+
         // Should have the last 10 requests (5-14)
         val logs = interceptor.getLogs()
         assertTrue(logs.first().url.contains("request5"))
@@ -102,9 +94,7 @@ class GHReporterInterceptorTest {
     fun `clear removes all logs`() {
         // Given
         mockWebServer.enqueue(MockResponse().setBody("test").setResponseCode(200))
-        val request = Request.Builder()
-            .url(mockWebServer.url("/api/test"))
-            .build()
+        val request = Request.Builder().url(mockWebServer.url("/api/test")).build()
         client.newCall(request).execute()
         assertEquals(1, interceptor.size())
 
@@ -125,9 +115,7 @@ class GHReporterInterceptorTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(404))
 
         repeat(4) {
-            val request = Request.Builder()
-                .url(mockWebServer.url("/api/test$it"))
-                .build()
+            val request = Request.Builder().url(mockWebServer.url("/api/test$it")).build()
             client.newCall(request).execute()
         }
 
@@ -149,9 +137,7 @@ class GHReporterInterceptorTest {
         mockWebServer.enqueue(MockResponse().setResponseCode(200))
 
         listOf("/api/users", "/api/posts", "/admin/users").forEach { path ->
-            val request = Request.Builder()
-                .url(mockWebServer.url(path))
-                .build()
+            val request = Request.Builder().url(mockWebServer.url(path)).build()
             client.newCall(request).execute()
         }
 
@@ -166,9 +152,7 @@ class GHReporterInterceptorTest {
     fun `formatSummary produces correct format`() {
         // Given
         mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        val request = Request.Builder()
-            .url(mockWebServer.url("/api/test"))
-            .build()
+        val request = Request.Builder().url(mockWebServer.url("/api/test")).build()
         client.newCall(request).execute()
 
         // When
@@ -186,12 +170,13 @@ class GHReporterInterceptorTest {
     fun `sensitive headers are redacted in formatDetailed`() {
         // Given
         mockWebServer.enqueue(MockResponse().setResponseCode(200))
-        val request = Request.Builder()
-            .url(mockWebServer.url("/api/test"))
-            .header("Authorization", "Bearer secret-token")
-            .header("X-Api-Key", "my-api-key")
-            .header("Content-Type", "application/json")
-            .build()
+        val request =
+            Request.Builder()
+                .url(mockWebServer.url("/api/test"))
+                .header("Authorization", "Bearer secret-token")
+                .header("X-Api-Key", "my-api-key")
+                .header("Content-Type", "application/json")
+                .build()
         client.newCall(request).execute()
 
         // When

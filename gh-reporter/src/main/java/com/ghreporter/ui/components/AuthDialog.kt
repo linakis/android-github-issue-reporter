@@ -44,9 +44,8 @@ import kotlinx.coroutines.launch
 /**
  * Non-dismissable authentication dialog for GitHub Device Flow.
  *
- * Shows device code and URL that user needs to visit manually.
- * Cannot be dismissed by tapping outside or pressing back.
- * Only dismisses when authentication succeeds or user clicks Cancel.
+ * Shows device code and URL that user needs to visit manually. Cannot be dismissed by tapping
+ * outside or pressing back. Only dismisses when authentication succeeds or user clicks Cancel.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,22 +62,10 @@ fun AuthDialog(
     val clipboardManager = LocalClipboardManager.current
 
     AlertDialog(
-        onDismissRequest = { /* Non-dismissable */ },
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
-        ),
-        confirmButton = {
-            TextButton(onClick = onCancel) {
-                Text("Cancel")
-            }
-        },
-        title = {
-            Text(
-                text = "Sign in to GitHub",
-                style = MaterialTheme.typography.titleLarge
-            )
-        },
+        onDismissRequest = { /* Non-dismissable */},
+        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
+        confirmButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        title = { Text(text = "Sign in to GitHub", style = MaterialTheme.typography.titleLarge) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -97,24 +84,25 @@ fun AuthDialog(
 
                     // User code display
                     Row(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(MaterialTheme.colorScheme.surface)
-                            .border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier =
+                            Modifier.clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.surface)
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = userCode,
-                            style = MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 3.sp
-                            ),
+                            style =
+                                MaterialTheme.typography.headlineSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 3.sp
+                                ),
                             color = MaterialTheme.colorScheme.primary
                         )
 
@@ -123,9 +111,7 @@ fun AuthDialog(
                         IconButton(
                             onClick = {
                                 clipboardManager.setText(AnnotatedString(userCode))
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Code copied")
-                                }
+                                scope.launch { snackbarHostState.showSnackbar("Code copied") }
                             },
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -148,17 +134,18 @@ fun AuthDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(MaterialTheme.colorScheme.surfaceVariant)
-                            .padding(12.dp)
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(12.dp)
                     ) {
                         Text(
                             text = verificationUri,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.Medium
-                            ),
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Medium
+                                ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
@@ -195,9 +182,7 @@ fun AuthDialog(
                     )
                 } else if (isLoading) {
                     // Initial loading state
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator()
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(

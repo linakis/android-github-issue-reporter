@@ -3,9 +3,7 @@ package com.ghreporter.api.models
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
-/**
- * Request body for creating a GitHub issue.
- */
+/** Request body for creating a GitHub issue. */
 @JsonClass(generateAdapter = true)
 data class CreateIssueRequest(
     @Json(name = "title") val title: String,
@@ -15,9 +13,7 @@ data class CreateIssueRequest(
     @Json(name = "milestone") val milestone: Int? = null
 )
 
-/**
- * Response from creating a GitHub issue.
- */
+/** Response from creating a GitHub issue. */
 @JsonClass(generateAdapter = true)
 data class IssueResponse(
     @Json(name = "id") val id: Long,
@@ -32,9 +28,7 @@ data class IssueResponse(
     @Json(name = "updated_at") val updatedAt: String
 )
 
-/**
- * GitHub user information.
- */
+/** GitHub user information. */
 @JsonClass(generateAdapter = true)
 data class GitHubUser(
     @Json(name = "id") val id: Long,
@@ -45,9 +39,7 @@ data class GitHubUser(
     @Json(name = "email") val email: String? = null
 )
 
-/**
- * GitHub issue label.
- */
+/** GitHub issue label. */
 @JsonClass(generateAdapter = true)
 data class Label(
     @Json(name = "id") val id: Long,
@@ -56,9 +48,7 @@ data class Label(
     @Json(name = "description") val description: String?
 )
 
-/**
- * Request body for creating a GitHub Gist.
- */
+/** Request body for creating a GitHub Gist. */
 @JsonClass(generateAdapter = true)
 data class CreateGistRequest(
     @Json(name = "description") val description: String,
@@ -66,17 +56,10 @@ data class CreateGistRequest(
     @Json(name = "files") val files: Map<String, GistFile>
 )
 
-/**
- * A file within a Gist.
- */
-@JsonClass(generateAdapter = true)
-data class GistFile(
-    @Json(name = "content") val content: String
-)
+/** A file within a Gist. */
+@JsonClass(generateAdapter = true) data class GistFile(@Json(name = "content") val content: String)
 
-/**
- * Response from creating a GitHub Gist.
- */
+/** Response from creating a GitHub Gist. */
 @JsonClass(generateAdapter = true)
 data class GistResponse(
     @Json(name = "id") val id: String,
@@ -89,9 +72,7 @@ data class GistResponse(
     @Json(name = "owner") val owner: GitHubUser?
 )
 
-/**
- * File information in a Gist response.
- */
+/** File information in a Gist response. */
 @JsonClass(generateAdapter = true)
 data class GistFileResponse(
     @Json(name = "filename") val filename: String,
@@ -101,9 +82,7 @@ data class GistFileResponse(
     @Json(name = "size") val size: Int
 )
 
-/**
- * GitHub repository information.
- */
+/** GitHub repository information. */
 @JsonClass(generateAdapter = true)
 data class Repository(
     @Json(name = "id") val id: Long,
@@ -115,9 +94,7 @@ data class Repository(
     @Json(name = "owner") val owner: GitHubUser
 )
 
-/**
- * GitHub API error response.
- */
+/** GitHub API error response. */
 @JsonClass(generateAdapter = true)
 data class GitHubError(
     @Json(name = "message") val message: String,

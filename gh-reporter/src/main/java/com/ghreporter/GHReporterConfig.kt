@@ -6,8 +6,10 @@ package com.ghreporter
  * @property githubOwner The GitHub repository owner (username or organization)
  * @property githubRepo The GitHub repository name
  * @property githubClientId GitHub OAuth App client ID (for Device Flow authentication)
- * @property maxTimberLogEntries Maximum number of Timber log entries to keep in memory (default: 500)
- * @property maxOkHttpLogEntries Maximum number of OkHttp request/response pairs to keep (default: 50)
+ * @property maxTimberLogEntries Maximum number of Timber log entries to keep in memory
+ *   (default: 500)
+ * @property maxOkHttpLogEntries Maximum number of OkHttp request/response pairs to keep
+ *   (default: 50)
  * @property maxLogcatLines Maximum number of logcat lines to capture (default: 500)
  * @property enableLogcat Whether to enable logcat collection (default: true)
  * @property defaultLabels Default labels to apply to created issues
@@ -46,9 +48,7 @@ data class GHReporterConfig(
         require(screenshotMaxWidth > 0) { "screenshotMaxWidth must be positive" }
     }
 
-    /**
-     * Builder pattern for Java interoperability.
-     */
+    /** Builder pattern for Java interoperability. */
     class Builder(
         private val githubOwner: String,
         private val githubRepo: String,
@@ -67,44 +67,50 @@ data class GHReporterConfig(
         private var screenshotMaxWidth: Int = 480
 
         fun maxTimberLogEntries(value: Int) = apply { maxTimberLogEntries = value }
+
         fun maxOkHttpLogEntries(value: Int) = apply { maxOkHttpLogEntries = value }
+
         fun maxLogcatLines(value: Int) = apply { maxLogcatLines = value }
+
         fun enableLogcat(value: Boolean) = apply { enableLogcat = value }
+
         fun defaultLabels(value: List<String>) = apply { defaultLabels = value }
+
         fun shakeToReport(value: Boolean) = apply { shakeToReport = value }
+
         fun shakeThresholdG(value: Float) = apply { shakeThresholdG = value }
+
         fun shakeCooldownMs(value: Long) = apply { shakeCooldownMs = value }
+
         fun includeDeviceInfo(value: Boolean) = apply { includeDeviceInfo = value }
+
         fun includeAppInfo(value: Boolean) = apply { includeAppInfo = value }
+
         fun screenshotMaxWidth(value: Int) = apply { screenshotMaxWidth = value }
 
-        fun build() = GHReporterConfig(
-            githubOwner = githubOwner,
-            githubRepo = githubRepo,
-            githubClientId = githubClientId,
-            maxTimberLogEntries = maxTimberLogEntries,
-            maxOkHttpLogEntries = maxOkHttpLogEntries,
-            maxLogcatLines = maxLogcatLines,
-            enableLogcat = enableLogcat,
-            defaultLabels = defaultLabels,
-            shakeToReport = shakeToReport,
-            shakeThresholdG = shakeThresholdG,
-            shakeCooldownMs = shakeCooldownMs,
-            includeDeviceInfo = includeDeviceInfo,
-            includeAppInfo = includeAppInfo,
-            screenshotMaxWidth = screenshotMaxWidth
-        )
+        fun build() =
+            GHReporterConfig(
+                githubOwner = githubOwner,
+                githubRepo = githubRepo,
+                githubClientId = githubClientId,
+                maxTimberLogEntries = maxTimberLogEntries,
+                maxOkHttpLogEntries = maxOkHttpLogEntries,
+                maxLogcatLines = maxLogcatLines,
+                enableLogcat = enableLogcat,
+                defaultLabels = defaultLabels,
+                shakeToReport = shakeToReport,
+                shakeThresholdG = shakeThresholdG,
+                shakeCooldownMs = shakeCooldownMs,
+                includeDeviceInfo = includeDeviceInfo,
+                includeAppInfo = includeAppInfo,
+                screenshotMaxWidth = screenshotMaxWidth
+            )
     }
 
     companion object {
-        /**
-         * Creates a builder for GHReporterConfig.
-         */
+        /** Creates a builder for GHReporterConfig. */
         @JvmStatic
-        fun builder(
-            githubOwner: String,
-            githubRepo: String,
-            githubClientId: String
-        ) = Builder(githubOwner, githubRepo, githubClientId)
+        fun builder(githubOwner: String, githubRepo: String, githubClientId: String) =
+            Builder(githubOwner, githubRepo, githubClientId)
     }
 }

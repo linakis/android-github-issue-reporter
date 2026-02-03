@@ -1,21 +1,19 @@
 package com.ghreporter.collectors
 
-import okhttp3.Interceptor
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.ResponseBody.Companion.toResponseBody
-import okio.Buffer
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.TimeUnit
+import okhttp3.Interceptor
+import okhttp3.Request
+import okhttp3.Response
+import okio.Buffer
 
 /**
  * An OkHttp Interceptor that collects network request/response logs for GHReporter.
  *
- * Uses a ring buffer to keep the most recent entries up to [maxEntries].
- * Thread-safe for concurrent network operations.
+ * Uses a ring buffer to keep the most recent entries up to [maxEntries]. Thread-safe for concurrent
+ * network operations.
  *
  * Usage:
  * ```kotlin
@@ -32,9 +30,7 @@ class GHReporterInterceptor(
     private val logs = ConcurrentLinkedDeque<NetworkLogEntry>()
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
-    /**
-     * Represents a single network request/response pair.
-     */
+    /** Represents a single network request/response pair. */
     data class NetworkLogEntry(
         val id: String,
         val timestamp: Long,
@@ -51,17 +47,13 @@ class GHReporterInterceptor(
         val error: String?,
         val isSuccess: Boolean
     ) {
-        /**
-         * Format as a concise summary line.
-         */
+        /** Format as a concise summary line. */
         fun formatSummary(): String {
             val status = if (isSuccess) "$responseCode" else "ERROR"
             return "$formattedTime | $method $url | $status | ${durationMs}ms"
         }
 
-        /**
-         * Format as a detailed log entry.
-         */
+        /** Format as a detailed log entry. */
         fun formatDetailed(): String = buildString {
             appendLine("═══════════════════════════════════════════════════════════════")
             appendLine("[$formattedTime] $method $url")
@@ -87,9 +79,7 @@ class GHReporterInterceptor(
             } else {
                 appendLine("RESPONSE: $responseCode $responseMessage (${durationMs}ms)")
                 if (responseHeaders.isNotEmpty()) {
-                    responseHeaders.forEach { (k, v) ->
-                        appendLine("  $k: $v")
-                    }
+                    responseHeaders.forEach { (k, v) -> appendLine("  $k: $v") }
                 }
                 if (!responseBody.isNullOrBlank()) {
                     appendLine("  Body: ${truncateBody(responseBody)}")
@@ -99,11 +89,13 @@ class GHReporterInterceptor(
 
         private fun redactSensitiveHeader(key: String, value: String): String {
             val lowerKey = key.lowercase()
-            return if (lowerKey.contains("authorization") ||
-                lowerKey.contains("cookie") ||
-                lowerKey.contains("token") ||
-                lowerKey.contains("api-key") ||
-                lowerKey.contains("apikey")) {
+            return if (
+                lowerKey.contains("authorization") ||
+                    lowerKey.contains("cookie") ||
+                    lowerKey.contains("token") ||
+                    lowerKey.contains("api-key") ||
+                    lowerKey.contains("apikey")
+            ) {
                 "[REDACTED]"
             } else {
                 value
@@ -140,22 +132,23 @@ class GHReporterInterceptor(
         } finally {
             val durationMs = System.currentTimeMillis() - startTime
 
-            val entry = NetworkLogEntry(
-                id = requestId,
-                timestamp = startTime,
-                formattedTime = dateFormat.format(now),
-                method = request.method,
-                url = request.url.toString(),
-                requestHeaders = requestHeaders,
-                requestBody = requestBody,
-                responseCode = response?.code,
-                responseMessage = response?.message,
-                responseHeaders = response?.let { extractResponseHeaders(it) } ?: emptyMap(),
-                responseBody = response?.let { extractResponseBody(it) },
-                durationMs = durationMs,
-                error = error,
-                isSuccess = response?.isSuccessful == true
-            )
+            val entry =
+                NetworkLogEntry(
+                    id = requestId,
+                    timestamp = startTime,
+                    formattedTime = dateFormat.format(now),
+                    method = request.method,
+                    url = request.url.toString(),
+                    requestHeaders = requestHeaders,
+                    requestBody = requestBody,
+                    responseCode = response?.code,
+                    responseMessage = response?.message,
+                    responseHeaders = response?.let { extractResponseHeaders(it) } ?: emptyMap(),
+                    responseBody = response?.let { extractResponseBody(it) },
+                    durationMs = durationMs,
+                    error = error,
+                    isSuccess = response?.isSuccessful == true
+                )
 
             logs.addLast(entry)
 
@@ -182,7 +175,7 @@ class GHReporterInterceptor(
         return try {
             val buffer = Buffer()
             body.writeTo(buffer)
-            
+
             if (buffer.size > maxBodySize) {
                 "[Body too large: ${buffer.size} bytes]"
             } else {
@@ -199,10 +192,12 @@ class GHReporterInterceptor(
 
         // Skip binary content
         val subtype = contentType?.subtype?.lowercase() ?: ""
-        if (subtype.contains("octet-stream") ||
-            subtype.contains("image") ||
-            subtype.contains("video") ||
-            subtype.contains("audio")) {
+        if (
+            subtype.contains("octet-stream") ||
+                subtype.contains("image") ||
+                subtype.contains("video") ||
+                subtype.contains("audio")
+        ) {
             return "[Binary content: ${contentType}]"
         }
 
@@ -232,50 +227,36 @@ class GHReporterInterceptor(
      */
     fun getLogs(): List<NetworkLogEntry> = logs.toList()
 
-    /**
-     * Get logs formatted as summaries.
-     */
+    /** Get logs formatted as summaries. */
     fun getLogsAsSummary(): String {
         return logs.joinToString("\n") { it.formatSummary() }
     }
 
-    /**
-     * Get logs formatted with full details.
-     */
+    /** Get logs formatted with full details. */
     fun getLogsAsDetailed(): String {
         return logs.joinToString("\n\n") { it.formatDetailed() }
     }
 
-    /**
-     * Get the number of collected logs.
-     */
+    /** Get the number of collected logs. */
     fun size(): Int = logs.size
 
-    /**
-     * Clear all collected logs.
-     */
+    /** Clear all collected logs. */
     fun clear() {
         logs.clear()
     }
 
-    /**
-     * Get only failed requests.
-     */
+    /** Get only failed requests. */
     fun getFailedRequests(): List<NetworkLogEntry> {
         return logs.filter { !it.isSuccess }
     }
 
-    /**
-     * Get requests matching a URL pattern.
-     */
+    /** Get requests matching a URL pattern. */
     fun getLogsByUrlPattern(pattern: String): List<NetworkLogEntry> {
         val regex = Regex(pattern)
         return logs.filter { regex.containsMatchIn(it.url) }
     }
 
-    /**
-     * Get requests from the last N milliseconds.
-     */
+    /** Get requests from the last N milliseconds. */
     fun getLogsFromLast(durationMs: Long): List<NetworkLogEntry> {
         val cutoff = System.currentTimeMillis() - durationMs
         return logs.filter { it.timestamp >= cutoff }

@@ -50,9 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
-/**
- * Issue form screen for composing and submitting GitHub issues.
- */
+/** Issue form screen for composing and submitting GitHub issues. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun IssueFormScreen(
@@ -100,10 +98,7 @@ fun IssueFormScreen(
                 title = { Text("Report Issue") },
                 navigationIcon = {
                     IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close"
-                        )
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close")
                     }
                 },
                 actions = {
@@ -116,17 +111,14 @@ fun IssueFormScreen(
                             AsyncImage(
                                 model = avatarUrl,
                                 contentDescription = "User avatar",
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surface),
+                                modifier =
+                                    Modifier.size(32.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surface),
                                 contentScale = ContentScale.Crop
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = username,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Text(text = username, style = MaterialTheme.typography.bodyMedium)
                             IconButton(onClick = onSignOut) {
                                 Icon(
                                     imageVector = Icons.Default.Logout,
@@ -137,18 +129,16 @@ fun IssueFormScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    )
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .padding(16.dp)
+            modifier =
+                Modifier.fillMaxSize().padding(padding).verticalScroll(scrollState).padding(16.dp)
         ) {
             // Title field
             OutlinedTextField(
@@ -168,10 +158,10 @@ fun IssueFormScreen(
                 value = body,
                 onValueChange = onBodyChange,
                 label = { Text("Description") },
-                placeholder = { Text("Describe what happened, steps to reproduce, expected behavior...") },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(160.dp),
+                placeholder = {
+                    Text("Describe what happened, steps to reproduce, expected behavior...")
+                },
+                modifier = Modifier.fillMaxWidth().height(160.dp),
                 enabled = !isSubmitting
             )
 
@@ -198,10 +188,13 @@ fun IssueFormScreen(
                             onClick = { onLabelToggle(label) },
                             label = { Text(label) },
                             enabled = !isSubmitting,
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
+                            colors =
+                                FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor =
+                                        MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor =
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                )
                         )
                     }
                 }
@@ -229,10 +222,7 @@ fun IssueFormScreen(
                     enabled = !isSubmitting
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Text(
-                    text = "Include screenshot",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Text(text = "Include screenshot", style = MaterialTheme.typography.bodyMedium)
             }
 
             if (includeScreenshot) {
@@ -241,15 +231,15 @@ fun IssueFormScreen(
                 if (screenshotUri != null) {
                     // Show selected screenshot
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(
-                                width = 1.dp,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(12.dp)
-                            )
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(200.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
                     ) {
                         AsyncImage(
                             model = screenshotUri,
@@ -261,13 +251,14 @@ fun IssueFormScreen(
                         // Remove button
                         IconButton(
                             onClick = onRemoveScreenshot,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                                    shape = CircleShape
-                                )
+                            modifier =
+                                Modifier.align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                                    .background(
+                                        color =
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
+                                        shape = CircleShape
+                                    )
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Close,
@@ -279,21 +270,19 @@ fun IssueFormScreen(
                 } else {
                     // Pick screenshot button
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(12.dp)
-                            )
-                            .clickable(enabled = !isSubmitting) { onPickScreenshot() },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .height(120.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .clickable(enabled = !isSubmitting) { onPickScreenshot() },
                         contentAlignment = Alignment.Center
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(
                                 imageVector = Icons.Default.AddPhotoAlternate,
                                 contentDescription = null,
@@ -411,9 +400,7 @@ private fun LogToggleRow(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -438,10 +425,6 @@ private fun LogToggleRow(
             )
         }
 
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange,
-            enabled = enabled
-        )
+        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
     }
 }

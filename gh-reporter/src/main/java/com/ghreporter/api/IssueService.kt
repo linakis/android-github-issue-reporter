@@ -8,10 +8,10 @@ import com.ghreporter.api.models.CreateIssueRequest
 import com.ghreporter.api.models.IssueResponse
 import com.ghreporter.auth.SecureTokenStorage
 import com.ghreporter.utils.ImageUtils
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Service for creating GitHub issues.
@@ -23,30 +23,18 @@ class IssueService(
     private val gistService: GistService
 ) {
 
-    private val apiService: GitHubApiService by lazy {
-        GitHubApiClient.create(tokenStorage)
-    }
+    private val apiService: GitHubApiService by lazy { GitHubApiClient.create(tokenStorage) }
 
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.US)
 
-    /**
-     * Result of an issue creation attempt.
-     */
+    /** Result of an issue creation attempt. */
     sealed class IssueResult {
-        data class Success(
-            val issue: IssueResponse,
-            val gistUrl: String?
-        ) : IssueResult()
+        data class Success(val issue: IssueResponse, val gistUrl: String?) : IssueResult()
 
-        data class Error(
-            val message: String,
-            val exception: Exception? = null
-        ) : IssueResult()
+        data class Error(val message: String, val exception: Exception? = null) : IssueResult()
     }
 
-    /**
-     * Options for creating an issue.
-     */
+    /** Options for creating an issue. */
     data class IssueOptions(
         val title: String,
         val description: String,
@@ -73,79 +61,89 @@ class IssueService(
         owner: String,
         repo: String,
         options: IssueOptions
-    ): IssueResult = withContext(Dispatchers.IO) {
-        try {
-            var gistUrl: String? = null
+    ): IssueResult =
+        withContext(Dispatchers.IO) {
+            try {
+                var gistUrl: String? = null
 
-            // Process screenshot if included
-            var screenshotBase64: String? = null
-            if (options.screenshotUris.isNotEmpty()) {
-                val maxWidth = GHReporter.getConfig().screenshotMaxWidth
-                val processedImage = ImageUtils.processImage(context, options.screenshotUris.first(), maxWidth)
-                screenshotBase64 = processedImage?.base64
-            }
+                // Process screenshot if included
+                var screenshotBase64: String? = null
+                if (options.screenshotUris.isNotEmpty()) {
+                    val maxWidth = GHReporter.getConfig().screenshotMaxWidth
+                    val processedImage =
+                        ImageUtils.processImage(context, options.screenshotUris.first(), maxWidth)
+                    screenshotBase64 = processedImage?.base64
+                }
 
-            // Create Gist for logs if any log option is enabled OR screenshot is present
-            if (options.includeTimberLogs || options.includeOkHttpLogs || options.includeLogcat || screenshotBase64 != null) {
-                val gistResult = gistService.createLogsGistFromCollectors(
-                    includeTimber = options.includeTimberLogs,
-                    includeOkHttp = options.includeOkHttpLogs,
-                    includeLogcat = options.includeLogcat,
-                    screenshotBase64 = screenshotBase64,
-                    issueTitle = options.title
-                )
+                // Create Gist for logs if any log option is enabled OR screenshot is present
+                if (
+                    options.includeTimberLogs ||
+                        options.includeOkHttpLogs ||
+                        options.includeLogcat ||
+                        screenshotBase64 != null
+                ) {
+                    val gistResult =
+                        gistService.createLogsGistFromCollectors(
+                            includeTimber = options.includeTimberLogs,
+                            includeOkHttp = options.includeOkHttpLogs,
+                            includeLogcat = options.includeLogcat,
+                            screenshotBase64 = screenshotBase64,
+                            issueTitle = options.title
+                        )
 
-                when (gistResult) {
-                    is GistService.GistResult.Success -> {
-                        gistUrl = gistResult.gist.htmlUrl
-                    }
-                    is GistService.GistResult.Error -> {
-                        // Log but don't fail - continue without Gist
-                        // The user can still report the issue
+                    when (gistResult) {
+                        is GistService.GistResult.Success -> {
+                            gistUrl = gistResult.gist.htmlUrl
+                        }
+                        is GistService.GistResult.Error -> {
+                            // Log but don't fail - continue without Gist
+                            // The user can still report the issue
+                        }
                     }
                 }
-            }
 
-            // Build issue body
-            val body = buildIssueBody(
-                context = context,
-                description = options.description,
-                gistUrl = gistUrl,
-                includeDeviceInfo = options.includeDeviceInfo,
-                includeAppInfo = options.includeAppInfo,
-                screenshotUris = options.screenshotUris,
-                hasGist = gistUrl != null
-            )
+                // Build issue body
+                val body =
+                    buildIssueBody(
+                        context = context,
+                        description = options.description,
+                        gistUrl = gistUrl,
+                        includeDeviceInfo = options.includeDeviceInfo,
+                        includeAppInfo = options.includeAppInfo,
+                        screenshotUris = options.screenshotUris,
+                        hasGist = gistUrl != null
+                    )
 
-            // Combine default labels with additional labels
-            val config = GHReporter.getConfig()
-            val allLabels = (config.defaultLabels + options.additionalLabels).distinct()
+                // Combine default labels with additional labels
+                val config = GHReporter.getConfig()
+                val allLabels = (config.defaultLabels + options.additionalLabels).distinct()
 
-            val request = CreateIssueRequest(
-                title = options.title,
-                body = body,
-                labels = allLabels.takeIf { it.isNotEmpty() }
-            )
+                val request =
+                    CreateIssueRequest(
+                        title = options.title,
+                        body = body,
+                        labels = allLabels.takeIf { it.isNotEmpty() }
+                    )
 
-            val response = apiService.createIssue(owner, repo, request)
+                val response = apiService.createIssue(owner, repo, request)
 
-            if (response.isSuccessful) {
-                val issue = response.body()
-                if (issue != null) {
-                    IssueResult.Success(issue, gistUrl)
+                if (response.isSuccessful) {
+                    val issue = response.body()
+                    if (issue != null) {
+                        IssueResult.Success(issue, gistUrl)
+                    } else {
+                        IssueResult.Error("Empty response from GitHub API")
+                    }
                 } else {
-                    IssueResult.Error("Empty response from GitHub API")
+                    val errorBody = response.errorBody()?.string()
+                    IssueResult.Error(
+                        "Failed to create issue: ${response.code()} - ${errorBody ?: response.message()}"
+                    )
                 }
-            } else {
-                val errorBody = response.errorBody()?.string()
-                IssueResult.Error(
-                    "Failed to create issue: ${response.code()} - ${errorBody ?: response.message()}"
-                )
+            } catch (e: Exception) {
+                IssueResult.Error("Failed to create issue: ${e.message}", e)
             }
-        } catch (e: Exception) {
-            IssueResult.Error("Failed to create issue: ${e.message}", e)
         }
-    }
 
     private fun buildIssueBody(
         context: Context,
@@ -176,7 +174,9 @@ class IssueService(
                 appendLine("4. Open the downloaded HTML file in your web browser")
                 appendLine()
             } else {
-                appendLine("*${screenshotUris.size} screenshot(s) were selected but could not be uploaded.*")
+                appendLine(
+                    "*${screenshotUris.size} screenshot(s) were selected but could not be uploaded.*"
+                )
                 appendLine("*Please attach them manually if needed.*")
             }
             appendLine()
@@ -198,7 +198,9 @@ class IssueService(
             appendLine("| Property | Value |")
             appendLine("|----------|-------|")
             appendLine("| Device | ${Build.MANUFACTURER} ${Build.MODEL} |")
-            appendLine("| Android Version | ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) |")
+            appendLine(
+                "| Android Version | ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT}) |"
+            )
             appendLine("| Build | ${Build.DISPLAY} |")
             appendLine("| Hardware | ${Build.HARDWARE} |")
             appendLine("| Product | ${Build.PRODUCT} |")
@@ -209,12 +211,12 @@ class IssueService(
         if (includeAppInfo) {
             try {
                 val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    packageInfo.longVersionCode
-                } else {
-                    @Suppress("DEPRECATION")
-                    packageInfo.versionCode.toLong()
-                }
+                val versionCode =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        packageInfo.longVersionCode
+                    } else {
+                        @Suppress("DEPRECATION") packageInfo.versionCode.toLong()
+                    }
 
                 appendLine("## App Information")
                 appendLine()
@@ -240,7 +242,7 @@ class IssueService(
      * @param repo Repository name
      * @return true if the user has access
      */
-    suspend fun verifyRepositoryAccess(owner: String, repo: String): Boolean = 
+    suspend fun verifyRepositoryAccess(owner: String, repo: String): Boolean =
         withContext(Dispatchers.IO) {
             try {
                 val response = apiService.checkRepositoryAccess(owner, repo)
@@ -250,38 +252,30 @@ class IssueService(
             }
         }
 
-    /**
-     * Get the authenticated user's username.
-     */
-    suspend fun getAuthenticatedUsername(): String? = withContext(Dispatchers.IO) {
-        try {
-            val response = apiService.getAuthenticatedUser()
-            if (response.isSuccessful) {
-                response.body()?.login
-            } else {
+    /** Get the authenticated user's username. */
+    suspend fun getAuthenticatedUsername(): String? =
+        withContext(Dispatchers.IO) {
+            try {
+                val response = apiService.getAuthenticatedUser()
+                if (response.isSuccessful) {
+                    response.body()?.login
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
                 null
             }
-        } catch (e: Exception) {
-            null
         }
-    }
 
     companion object {
-        @Volatile
-        private var instance: IssueService? = null
+        @Volatile private var instance: IssueService? = null
 
-        /**
-         * Get singleton instance.
-         */
-        fun getInstance(
-            tokenStorage: SecureTokenStorage,
-            gistService: GistService
-        ): IssueService {
-            return instance ?: synchronized(this) {
-                instance ?: IssueService(tokenStorage, gistService).also {
-                    instance = it
+        /** Get singleton instance. */
+        fun getInstance(tokenStorage: SecureTokenStorage, gistService: GistService): IssueService {
+            return instance
+                ?: synchronized(this) {
+                    instance ?: IssueService(tokenStorage, gistService).also { instance = it }
                 }
-            }
         }
     }
 }
