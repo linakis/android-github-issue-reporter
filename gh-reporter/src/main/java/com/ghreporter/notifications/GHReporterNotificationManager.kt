@@ -22,7 +22,10 @@ object GHReporterNotificationManager {
     private const val ACTION_REPORT = "com.ghreporter.action.REPORT"
 
     fun showPersistentNotification(context: Context, config: GHReporterConfig) {
-        if (!canPostNotifications(context)) return
+        if (!canPostNotifications(context)) {
+            requestNotificationPermission(context)
+            return
+        }
 
         createChannelIfNeeded(context)
 
@@ -55,7 +58,11 @@ object GHReporterNotificationManager {
                 )
                 .build()
 
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        try {
+            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        } catch (e: SecurityException) {
+            // Ignore if permission was revoked between check and notify.
+        }
     }
 
     fun cancelPersistentNotification(context: Context) {
@@ -107,6 +114,13 @@ object GHReporterNotificationManager {
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or pendingIntentImmutableFlag()
         )
+    }
+
+    private fun requestNotificationPermission(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+        val intent = Intent(context, NotificationPermissionActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
     }
 
     private fun canPostNotifications(context: Context): Boolean {
