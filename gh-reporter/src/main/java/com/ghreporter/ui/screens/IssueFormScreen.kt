@@ -25,8 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -121,7 +121,7 @@ fun IssueFormScreen(
                             Text(text = username, style = MaterialTheme.typography.bodyMedium)
                             IconButton(onClick = onSignOut) {
                                 Icon(
-                                    imageVector = Icons.Default.Logout,
+                                    imageVector = Icons.AutoMirrored.Filled.Logout,
                                     contentDescription = "Sign out",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -376,7 +376,7 @@ fun IssueFormScreen(
                     Text("Submitting...")
                 } else {
                     Icon(
-                        imageVector = Icons.Default.Send,
+                        imageVector = Icons.AutoMirrored.Filled.Send,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )

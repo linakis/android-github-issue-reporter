@@ -70,6 +70,7 @@ fun AuthDialog(
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         confirmButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
         title = { Text(text = "Sign in to GitHub", style = MaterialTheme.typography.titleLarge) },
+        modifier = modifier,
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),

@@ -60,7 +60,7 @@ object ImageUtils {
                 }
 
                 // Calculate sample size for efficient loading
-                val sampleSize = calculateSampleSize(originalWidth, originalHeight, maxWidth)
+                val sampleSize = calculateSampleSize(originalWidth, maxWidth)
 
                 // Decode with sample size
                 val decodeOptions = BitmapFactory.Options().apply { inSampleSize = sampleSize }
@@ -111,7 +111,7 @@ object ImageUtils {
         }
 
     /** Calculate the sample size for BitmapFactory to efficiently load large images. */
-    private fun calculateSampleSize(width: Int, height: Int, maxWidth: Int): Int {
+    private fun calculateSampleSize(width: Int, maxWidth: Int): Int {
         var sampleSize = 1
         if (width > maxWidth) {
             val halfWidth = width / 2
