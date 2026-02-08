@@ -45,6 +45,7 @@ object GHReporterNotificationManager {
                 .setContentTitle(title)
                 .setContentText(text)
                 .setContentIntent(contentIntent)
+                .setAutoCancel(false)
                 .setOngoing(true)
                 .setCategory(NotificationCompat.CATEGORY_STATUS)
                 .setPriority(NotificationCompat.PRIORITY_LOW)

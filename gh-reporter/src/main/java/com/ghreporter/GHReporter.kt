@@ -96,7 +96,7 @@ object GHReporter {
         this.config = config
         this.isInitialized = true
 
-        if (config.shakeToReport) {
+        if (config.shakeToReport || config.notificationToReport) {
             registerLifecycleObserver()
         }
 
@@ -288,12 +288,23 @@ object GHReporter {
         lifecycleObserver =
             object : DefaultLifecycleObserver {
                 override fun onStart(owner: LifecycleOwner) {
-                    val activity = ActivityTracker.getCurrentActivity() ?: return
-                    enableShakeToReport(activity)
+                    if (config.notificationToReport) {
+                        GHReporterNotificationManager.showPersistentNotification(
+                            applicationContext,
+                            config
+                        )
+                    }
+
+                    if (config.shakeToReport) {
+                        val activity = ActivityTracker.getCurrentActivity() ?: return
+                        enableShakeToReport(activity)
+                    }
                 }
 
                 override fun onStop(owner: LifecycleOwner) {
-                    disableShakeToReport()
+                    if (config.shakeToReport) {
+                        disableShakeToReport()
+                    }
                 }
             }
 
