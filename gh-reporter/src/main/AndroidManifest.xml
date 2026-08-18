@@ -19,6 +19,11 @@
             android:name=".notifications.NotificationPermissionActivity"
             android:exported="false"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name=".crash.CrashPromptActivity"
+            android:exported="false"
+            android:theme="@style/Theme.GHReporter"
+            android:excludeFromRecents="true" />
     </application>
 
 </manifest>

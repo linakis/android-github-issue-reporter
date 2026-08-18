@@ -236,6 +236,60 @@ class IssueService(
     }
 
     /**
+     * Create a GitHub issue directly from a pre-built title/body, with no Gist upload or
+     * screenshot handling — used by [com.ghreporter.crash.CrashHandler]'s automatic crash
+     * reporting, which builds its own body (see
+     * [com.ghreporter.crash.CrashReportFormatter]) with logs inlined rather than in a Gist,
+     * since that path runs silently in the background and every extra network call is
+     * another thing that can fail without anyone watching.
+     *
+     * @param owner Repository owner
+     * @param repo Repository name
+     * @param title Issue title
+     * @param body Issue body, already fully formatted
+     * @param labels Labels to apply (combined with the SDK's configured default labels)
+     * @return IssueResult indicating success or failure
+     */
+    suspend fun createRawIssue(
+        owner: String,
+        repo: String,
+        title: String,
+        body: String,
+        labels: List<String> = emptyList(),
+    ): IssueResult =
+        withContext(Dispatchers.IO) {
+            try {
+                val config = GHReporter.getConfig()
+                val allLabels = (config.defaultLabels + labels).distinct()
+
+                val request =
+                    CreateIssueRequest(
+                        title = title,
+                        body = body,
+                        labels = allLabels.takeIf { it.isNotEmpty() },
+                    )
+
+                val response = apiService.createIssue(owner, repo, request)
+
+                if (response.isSuccessful) {
+                    val issue = response.body()
+                    if (issue != null) {
+                        IssueResult.Success(issue, gistUrl = null)
+                    } else {
+                        IssueResult.Error("Empty response from GitHub API")
+                    }
+                } else {
+                    val errorBody = response.errorBody()?.string()
+                    IssueResult.Error(
+                        "Failed to create issue: ${response.code()} - ${errorBody ?: response.message()}",
+                    )
+                }
+            } catch (e: Exception) {
+                IssueResult.Error("Failed to create issue: ${e.message}", e)
+            }
+        }
+
+    /**
      * Verify that the user has access to the target repository.
      *
      * @param owner Repository owner

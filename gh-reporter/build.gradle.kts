@@ -2,8 +2,15 @@ plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("org.jetbrains.kotlin.plugin.compose")
     `maven-publish`
 }
+
+// Requires Kotlin 2.0+ (matching this module's own Kotlin version, see
+// gradle/libs.versions.toml) — the Compose Compiler Gradle plugin above replaces the legacy
+// composeOptions{} mechanism starting with Kotlin 2.0. iptv-app currently consumes this
+// module while pinned to Kotlin 1.9.20; that mismatch needs iptv-app's own Kotlin bump to
+// resolve, tracked separately.
 
 // Publishing configuration for JitPack
 afterEvaluate {
@@ -83,8 +90,6 @@ android {
     kotlinOptions { jvmTarget = "17" }
 
     buildFeatures { compose = true }
-
-    composeOptions { kotlinCompilerExtensionVersion = "1.5.4" }
 }
 
 dependencies {

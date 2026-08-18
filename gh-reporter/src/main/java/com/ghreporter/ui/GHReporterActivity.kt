@@ -37,18 +37,49 @@ class GHReporterActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        setContent { GHReporterTheme { GHReporterScreen(onDismiss = { finish() }) } }
+        val prefillTitle = intent.getStringExtra(EXTRA_PREFILL_TITLE)
+        val prefillBody = intent.getStringExtra(EXTRA_PREFILL_BODY)
+
+        setContent {
+            GHReporterTheme {
+                GHReporterScreen(
+                    onDismiss = { finish() },
+                    prefillTitle = prefillTitle,
+                    prefillBody = prefillBody,
+                )
+            }
+        }
+    }
+
+    companion object {
+        /**
+         * Optional pre-filled title/body, used by [com.ghreporter.GHReporter] to route a
+         * detected crash into the normal sign-in-then-review flow when the user isn't
+         * authenticated yet (an authenticated user's crash reports skip this UI entirely and
+         * submit silently — see GHReporter.checkForPendingCrash).
+         */
+        const val EXTRA_PREFILL_TITLE = "com.ghreporter.EXTRA_PREFILL_TITLE"
+        const val EXTRA_PREFILL_BODY = "com.ghreporter.EXTRA_PREFILL_BODY"
     }
 }
 
 @Composable
 fun GHReporterScreen(
     onDismiss: () -> Unit,
+    prefillTitle: String? = null,
+    prefillBody: String? = null,
     viewModel: ReporterViewModel =
         viewModel(factory = ReporterViewModel.factory(LocalContext.current))
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+
+    // Applied once on first composition, not on every recomposition — the user may go on to
+    // edit the pre-filled text, and we shouldn't stomp their edits back to the crash defaults.
+    LaunchedEffect(Unit) {
+        if (prefillTitle != null) viewModel.updateTitle(prefillTitle)
+        if (prefillBody != null) viewModel.updateBody(prefillBody)
+    }
 
     // Observe toast messages (informational only, don't close)
     LaunchedEffect(Unit) {

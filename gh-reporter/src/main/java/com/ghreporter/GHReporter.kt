@@ -4,12 +4,14 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.ghreporter.collectors.GHReporterInterceptor
 import com.ghreporter.collectors.GHReporterTree
 import com.ghreporter.collectors.LogcatCollector
+import com.ghreporter.crash.CrashReporter
 import com.ghreporter.notifications.GHReporterNotificationManager
 import com.ghreporter.shake.ShakeDetector
 import com.ghreporter.ui.GHReporterActivity
@@ -106,6 +108,38 @@ object GHReporter {
                 config
             )
         }
+
+        // Crash capture: file a GitHub issue for the *previous* run's crash (if any) first,
+        // then start watching for a crash in *this* run. Order matters — checking before
+        // installing means a crash during checkForPendingCrash itself can't be mistaken for
+        // a fresh crash of this session.
+        CrashReporter.checkForPendingCrash(applicationContext, config)
+        installCrashHandler()
+    }
+
+    private fun installCrashHandler() {
+        val appPackage = applicationContext.packageName
+        val (versionName, versionCode) =
+            try {
+                val packageInfo = applicationContext.packageManager.getPackageInfo(appPackage, 0)
+                val code =
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        packageInfo.longVersionCode
+                    } else {
+                        @Suppress("DEPRECATION") packageInfo.versionCode.toLong()
+                    }
+                packageInfo.versionName to code
+            } catch (e: Exception) {
+                null to 0L
+            }
+
+        CrashReporter.install(
+            context = applicationContext,
+            appPackage = appPackage,
+            appVersionName = versionName,
+            appVersionCode = versionCode,
+            timberTree = _timberTree,
+        )
     }
 
     /** Validates the SDK configuration. */
